@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsPositive, IsUUID, IsOptional } from 'class-validator';
+﻿import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsPositive, IsUUID, IsOptional, IsString } from 'class-validator';
 
 export class CreateOrderItemDto {
   @ApiProperty({ 
@@ -14,21 +14,22 @@ export class CreateOrderItemDto {
     description: 'ID del producto'
   })
   @IsUUID()
-  productoId: string;
+  productId: string;
 
   @ApiProperty({ 
-    example: 5,
-    description: 'Cantidad de items'
+    example: 2.5,
+    description: 'Cantidad solicitada'
   })
   @IsNumber()
   @IsPositive()
-  cantidad: number;
+  qtyRequested: number;
 
   @ApiProperty({ 
-    example: 29.99,
-    description: 'Precio unitario del producto en este pedido'
+    example: 'Para practica del martes',
+    description: 'Notas adicionales del item',
+    required: false,
   })
-  @IsNumber()
-  @IsPositive()
-  precioUnitario: number;
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

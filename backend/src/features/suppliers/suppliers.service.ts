@@ -66,10 +66,9 @@ export class SuppliersService {
     // Falls back to ILIKE if `unaccent` isn't available in the DB will throw,
     // so ensure the extension is enabled in the database (CREATE EXTENSION unaccent).
     const qb = this.suppliersRepository.createQueryBuilder('s')
-      .where("unaccent(lower(s.nombre)) LIKE '%' || unaccent(lower(:q)) || '%'", { q })
-      .orWhere("unaccent(lower(s.contacto)) LIKE '%' || unaccent(lower(:q)) || '%'", { q })
-      .orWhere("unaccent(lower(s.email)) LIKE '%' || unaccent(lower(:q)) || '%'", { q })
-      .orWhere("unaccent(lower(s.ciudad)) LIKE '%' || unaccent(lower(:q)) || '%'", { q })
+      .where('LOWER(s.nombre) LIKE :q', { q: `%${q.toLowerCase()}%` })
+      .orWhere('LOWER(s.email) LIKE :q', { q: `%${q.toLowerCase()}%` })
+      .orWhere('LOWER(s.notas) LIKE :q', { q: `%${q.toLowerCase()}%` })
       .orderBy('s.nombre', 'ASC')
       .take(20);
 
@@ -80,21 +79,11 @@ export class SuppliersService {
    * Crea un nuevo proveedor
    */
   async create(dto: CreateSupplierDto): Promise<Supplier> {
-    if (dto.email) {
-      const exists = await this.suppliersRepository.findOne({
-        where: { email: dto.email },
-      });
-      if (exists) {
-        throw new ConflictException(`Ya existe un proveedor con el email ${dto.email}`);
-      }
-    }
-    if (dto.cif) {
-      const exists = await this.suppliersRepository.findOne({
-        where: { cif: dto.cif },
-      });
-      if (exists) {
-        throw new ConflictException(`Ya existe un proveedor con el CIF ${dto.cif}`);
-      }
+    const exists = await this.suppliersRepository.findOne({
+      where: { nombre: dto.nombre },
+    });
+    if (exists) {
+      throw new ConflictException(`Ya existe un proveedor con el nombre "${dto.nombre}"`);
     }
     const supplier = this.suppliersRepository.create(dto);
     return this.suppliersRepository.save(supplier);
@@ -106,20 +95,12 @@ export class SuppliersService {
   async update(id: string, dto: UpdateSupplierDto): Promise<Supplier> {
     const supplier = await this.findOne(id);
 
-    if (dto.email && dto.email !== supplier.email) {
+    if (dto.nombre && dto.nombre !== supplier.nombre) {
       const exists = await this.suppliersRepository.findOne({
-        where: { email: dto.email },
+        where: { nombre: dto.nombre },
       });
       if (exists && exists.id !== id) {
-        throw new ConflictException(`Ya existe un proveedor con el email ${dto.email}`);
-      }
-    }
-    if (dto.cif && dto.cif !== supplier.cif) {
-      const exists = await this.suppliersRepository.findOne({
-        where: { cif: dto.cif },
-      });
-      if (exists && exists.id !== id) {
-        throw new ConflictException(`Ya existe un proveedor con el CIF ${dto.cif}`);
+        throw new ConflictException(`Ya existe un proveedor con el nombre "${dto.nombre}"`);
       }
     }
 

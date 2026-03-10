@@ -1,11 +1,17 @@
 -- scripts/db/003_suppliers.sql
--- Tabla de proveedores - Proyecto Intermodular Lovelace
+-- La tabla suppliers ya se crea en 001_init.sql con el esquema correcto.
+-- Este script se mantiene como no-op para no romper el orden de ejecución.
 
 BEGIN;
 
--- =========================
--- SUPPLIERS
--- =========================
+-- (no-op)
+
+-- [OBSOLETO] La definición original creaba una tabla suppliers con columnas
+-- incompatibles (nombre, contacto, etc.) que entran en conflicto con 002_seed.sql.
+-- La tabla correcta con columnas (name, contact_email, phone, notes, is_active)
+-- está definida en 001_init.sql.
+
+/*
 CREATE TABLE IF NOT EXISTS suppliers (
   id                    uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   nombre                varchar(255) NOT NULL,
@@ -41,5 +47,6 @@ VALUES
   ('Embalajes Express S.A.',      'Pilar Ruiz',      'pilar@emblajes.es',      '+34 600 303 404', 'Polígono Sur, Nave 15',            'Zaragoza',   'España', 'A77777777', 'Packaging,Embalaje,Bolsas',              'Plazo de entrega 48h',                   true),
   ('Import Food International',   'Kenji Nakamura',  'kenji@importfood.com',   '+34 600 505 606', 'Zona Franca, Edificio B',          'Barcelona',  'España', 'W88888888', 'Asiáticos,Exóticos,Especias',            'Importador especializado en productos asiáticos', false)
 ON CONFLICT DO NOTHING;
+*/
 
 COMMIT;

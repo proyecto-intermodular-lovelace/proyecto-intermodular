@@ -69,10 +69,34 @@ export class AuthService {
   }
 
   /**
+   * Devuelve el perfil completo del usuario autenticado (nombre, apellidos, etc.)
+   */
+  async getMe(userId: string) {
+    return this.usersService.findOne(userId);
+  }
+
+  /**
    * Registro de nuevos usuarios (opcional, si quieres centralizarlo aquí)
    */
   async register(registrationData: RegisterDto) {
     return this.usersService.create(registrationData);
+  }
+
+  /**
+   * Cambia la contraseña del usuario autenticado tras verificar la actual
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findOne(userId)
+    // findOne doesn't select passwordHash — re-fetch with it
+    const full = await this.usersService.findByEmail(user.email)
+    if (!full) throw new UnauthorizedException('Usuario no encontrado')
+
+    const match = await bcrypt.compare(currentPassword, full.passwordHash)
+    if (!match) throw new UnauthorizedException('La contraseña actual es incorrecta')
+
+    const salt = await bcrypt.genSalt(10)
+    const newHash = await bcrypt.hash(newPassword, salt)
+    await this.usersService.updatePasswordByEmail(user.email, newHash)
   }
 
   /**

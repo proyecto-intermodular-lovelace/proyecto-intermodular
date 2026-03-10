@@ -3,50 +3,29 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
+// Schema: id | name | contact_email | phone | notes | is_active | created_at
 @Entity('suppliers')
 export class Supplier {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'name', type: 'varchar', length: 200, unique: true })
   nombre: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  contacto: string | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  @Column({ name: 'contact_email', type: 'varchar', length: 255, nullable: true })
   email: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'phone', type: 'varchar', length: 50, nullable: true })
   telefono: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  direccion: string | null;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  ciudad: string | null;
-
-  @Column({ type: 'varchar', length: 100, nullable: true, default: 'España' })
-  pais: string | null;
-
-  @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
-  cif: string | null;
-
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  categorias_suministro: string | null;
-
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'notes', type: 'text', nullable: true })
   notas: string | null;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   activo: boolean;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
 }

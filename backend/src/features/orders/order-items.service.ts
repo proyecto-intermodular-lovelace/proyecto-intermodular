@@ -19,13 +19,15 @@ export class OrderItemsService {
 
   async findAll(): Promise<OrderItem[]> {
     return this.orderItemsRepository.find({
-      order: { createdAt: 'DESC' },
+      relations: ['product'],
+      order: {},
     });
   }
 
   async findOne(id: string): Promise<OrderItem> {
     const orderItem = await this.orderItemsRepository.findOne({
       where: { id },
+      relations: ['product'],
     });
 
     if (!orderItem) {
@@ -38,7 +40,8 @@ export class OrderItemsService {
   async findByOrderId(orderId: string): Promise<OrderItem[]> {
     return this.orderItemsRepository.find({
       where: { orderId },
-      order: { createdAt: 'DESC' },
+      relations: ['product'],
+      order: {},
     });
   }
 

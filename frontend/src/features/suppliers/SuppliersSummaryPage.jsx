@@ -34,21 +34,9 @@ export default function SuppliersSummaryPage() {
         if (!search) return activeSuppliers.slice(0, 8)
         const q = search.toLowerCase()
         return suppliers
-            .filter(s => [s.nombre, s.contacto, s.email, s.ciudad].some(v => String(v || '').toLowerCase().includes(q)))
+            .filter(s => [s.nombre, s.email, s.telefono].some(v => String(v || '').toLowerCase().includes(q)))
             .slice(0, 8)
     }, [suppliers, activeSuppliers, search])
-
-    // Group categories across all active suppliers
-    const topCategories = useMemo(() => {
-        const counts = {}
-        activeSuppliers.forEach(s => {
-            (s.categorias_suministro || '').split(',').forEach(c => {
-                const t = c.trim()
-                if (t) counts[t] = (counts[t] || 0) + 1
-            })
-        })
-        return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6)
-    }, [activeSuppliers])
 
     return (
         <div className="space-y-6 short:space-y-3">
@@ -91,9 +79,9 @@ export default function SuppliersSummaryPage() {
                     <p className="text-xs text-gray-400">deshabilitados</p>
                 </Card>
                 <Card className="p-4 short:p-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Categorías</p>
-                    <p className="text-3xl font-bold text-indigo-600 short:text-2xl">{topCategories.length}</p>
-                    <p className="text-xs text-gray-400">tipos de suministro</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Con notas</p>
+                    <p className="text-3xl font-bold text-indigo-600 short:text-2xl">{activeSuppliers.filter(s => s.notas).length}</p>
+                    <p className="text-xs text-gray-400">con observaciones</p>
                 </Card>
             </div>
 
@@ -135,19 +123,15 @@ export default function SuppliersSummaryPage() {
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-cifp-neutral-900 truncate">{s.nombre}</p>
                                     <p className="text-xs text-gray-500 truncate">
-                                        {s.contacto && <span>{s.contacto}</span>}
-                                        {s.contacto && s.ciudad && <span className="mx-1">·</span>}
-                                        {s.ciudad && <span>{s.ciudad}</span>}
+                                        {s.email || s.telefono || ''}
                                     </p>
                                 </div>
 
-                                {/* Categories */}
-                                <div className="hidden sm:flex flex-wrap gap-1 max-w-[180px]">
-                                    {(s.categorias_suministro || '').split(',').slice(0, 2).map(c => (
-                                        <span key={c} className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
-                                            {c.trim()}
-                                        </span>
-                                    ))}
+                                {/* Notes preview */}
+                                <div className="hidden sm:block max-w-[200px]">
+                                    {s.notas && (
+                                        <span className="text-xs text-gray-400 truncate block">{s.notas.slice(0, 40)}{s.notas.length > 40 ? '...' : ''}</span>
+                                    )}
                                 </div>
 
                                 {/* Status */}
@@ -174,21 +158,6 @@ export default function SuppliersSummaryPage() {
                     </button>
                 </div>
             </Card>
-
-            {/* ── Category Tags ── */}
-            {topCategories.length > 0 && (
-                <div>
-                    <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Categorías más frecuentes</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {topCategories.map(([cat, count]) => (
-                            <span key={cat} className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-sm px-3 py-1.5 rounded-full">
-                                {cat}
-                                <span className="bg-indigo-100 text-indigo-800 text-xs px-1.5 py-0.5 rounded-full font-semibold">{count}</span>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             {/* ── Mobile Actions ── */}
             <div className="flex sm:hidden gap-3">

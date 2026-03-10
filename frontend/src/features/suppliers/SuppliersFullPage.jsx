@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus,
-    Edit, Trash2, Download, Truck, CheckCircle, XCircle, ArrowLeft,
+    Edit, Trash2, Download, Truck, CheckCircle, XCircle, ArrowLeft, Eye,
 } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
@@ -10,14 +10,8 @@ import apiFetch from '../../services/api'
 
 const EMPTY_SUPPLIER = {
     nombre: '',
-    contacto: '',
     email: '',
     telefono: '',
-    direccion: '',
-    ciudad: '',
-    pais: 'España',
-    cif: '',
-    categorias_suministro: '',
     notas: '',
     activo: true,
 }
@@ -29,18 +23,17 @@ export default function SuppliersFullPage() {
     const [suppliers, setSuppliers] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [cityFilter, setCityFilter] = useState('all')
-    const [categoryFilter, setCategoryFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [sortColumn, setSortColumn] = useState(null)
     const [sortDirection, setSortDirection] = useState('asc')
     const [selectedIds, setSelectedIds] = useState([])
 
-    const [isEditing, setIsEditing] = useState(false)
-    const [editSupplier, setEditSupplier] = useState(null)
+    const [detailMode, setDetailMode] = useState(null) // null | 'view' | 'edit'
+    const [detailForm, setDetailForm] = useState(null)
+    const [detailSaving, setDetailSaving] = useState(false)
+    const [formError, setFormError] = useState(null)
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const [formError, setFormError] = useState(null)
 
     const isAdmin = user?.role !== 'USER'
 
@@ -58,17 +51,6 @@ export default function SuppliersFullPage() {
         return () => { mounted = false }
     }, [])
 
-    // Derived filter options
-    const cities = useMemo(() =>
-        [...new Set(suppliers.map(s => s.ciudad || ''))].filter(Boolean).sort(), [suppliers])
-
-    const categories = useMemo(() => {
-        const all = suppliers.flatMap(s =>
-            (s.categorias_suministro || '').split(',').map(c => c.trim()).filter(Boolean)
-        )
-        return [...new Set(all)].sort()
-    }, [suppliers])
-
     // Filter & sort
     const filtered = useMemo(() => {
         let result = suppliers
@@ -76,13 +58,9 @@ export default function SuppliersFullPage() {
         if (search) {
             const q = search.toLowerCase()
             result = result.filter(s =>
-                [s.nombre, s.contacto, s.email, s.ciudad, s.cif].some(v => String(v || '').toLowerCase().includes(q))
+                [s.nombre, s.email, s.telefono, s.notas].some(v => String(v || '').toLowerCase().includes(q))
             )
         }
-        if (cityFilter !== 'all') result = result.filter(s => s.ciudad === cityFilter)
-        if (categoryFilter !== 'all') result = result.filter(s =>
-            (s.categorias_suministro || '').toLowerCase().includes(categoryFilter.toLowerCase())
-        )
         if (statusFilter === 'active') result = result.filter(s => s.activo)
         if (statusFilter === 'inactive') result = result.filter(s => !s.activo)
 
@@ -95,7 +73,7 @@ export default function SuppliersFullPage() {
         }
 
         return result
-    }, [suppliers, search, cityFilter, categoryFilter, statusFilter, sortColumn, sortDirection])
+    }, [suppliers, search, statusFilter, sortColumn, sortDirection])
 
     const handleSort = (col) => {
         if (sortColumn === col) setSortDirection(d => d === 'asc' ? 'desc' : 'asc')
@@ -104,8 +82,6 @@ export default function SuppliersFullPage() {
 
     const handleResetFilters = () => {
         setSearch('')
-        setCityFilter('all')
-        setCategoryFilter('all')
         setStatusFilter('all')
         setSortColumn(null)
         setSortDirection('asc')
@@ -115,31 +91,36 @@ export default function SuppliersFullPage() {
     const handleSelectOne = (id) =>
         setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
-    const handleOpenCreate = () => { setEditSupplier({ ...EMPTY_SUPPLIER }); setFormError(null); setIsEditing(true) }
-    const handleOpenEdit = (s) => { setEditSupplier({ ...s }); setFormError(null); setIsEditing(true) }
-    const handleCloseEdit = () => { setEditSupplier(null); setIsEditing(false); setFormError(null) }
+    const openView = (s) => { setDetailForm({ ...s }); setDetailMode('view'); setFormError(null) }
+    const openEdit = (s) => { setDetailForm({ ...s }); setDetailMode('edit'); setFormError(null) }
+    const openCreate = () => { setDetailForm({ ...EMPTY_SUPPLIER }); setDetailMode('edit'); setFormError(null) }
+    const closeDetail = () => { setDetailForm(null); setDetailMode(null); setFormError(null) }
+    const handleDetailChange = (field, value) => setDetailForm(prev => ({ ...prev, [field]: value }))
 
-    const handleSaveEdit = async () => {
-        if (!editSupplier) return
+    const handleDetailSave = async () => {
+        if (!detailForm) return
         setFormError(null)
+        setDetailSaving(true)
         try {
-            const isExisting = editSupplier.id
+            const isExisting = !!detailForm.id
             if (isExisting) {
-                const res = await apiFetch(`/suppliers/${editSupplier.id}`, {
+                const res = await apiFetch(`/suppliers/${detailForm.id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(editSupplier),
+                    body: JSON.stringify(detailForm),
                 })
                 setSuppliers(prev => prev.map(s => s.id === res.id ? res : s))
             } else {
                 const res = await apiFetch('/suppliers', {
                     method: 'POST',
-                    body: JSON.stringify(editSupplier),
+                    body: JSON.stringify(detailForm),
                 })
                 setSuppliers(prev => [res, ...prev])
             }
-            handleCloseEdit()
+            closeDetail()
         } catch (err) {
             setFormError(err?.body?.message || err.message || 'Error al guardar.')
+        } finally {
+            setDetailSaving(false)
         }
     }
 
@@ -188,7 +169,7 @@ export default function SuppliersFullPage() {
             ? filtered.filter(s => selectedIds.includes(s.id))
             : filtered
         if (!data.length) return
-        const keys = ['nombre', 'contacto', 'email', 'telefono', 'ciudad', 'pais', 'cif', 'categorias_suministro', 'activo']
+        const keys = ['nombre', 'email', 'telefono', 'notas', 'activo']
         const csv = [keys.join(','), ...data.map(s =>
             keys.map(k => `"${String(s[k] ?? '').replace(/"/g, '""')}"`).join(',')
         )].join('\n')
@@ -207,77 +188,118 @@ export default function SuppliersFullPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-12rem)] space-y-4 pb-4">
 
-            {/* ── Edit / Create Modal ── */}
-            {isEditing && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
-                        <h3 className="text-lg font-semibold mb-4">
-                            {editSupplier?.id ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-                                <Input value={editSupplier?.nombre || ''} onChange={e => setEditSupplier({ ...editSupplier, nombre: e.target.value })} placeholder="Distribuciones García S.L." />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Persona de contacto</label>
-                                <Input value={editSupplier?.contacto || ''} onChange={e => setEditSupplier({ ...editSupplier, contacto: e.target.value })} placeholder="Carlos García" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                                <Input type="email" value={editSupplier?.email || ''} onChange={e => setEditSupplier({ ...editSupplier, email: e.target.value })} placeholder="contacto@empresa.es" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Teléfono</label>
-                                <Input value={editSupplier?.telefono || ''} onChange={e => setEditSupplier({ ...editSupplier, telefono: e.target.value })} placeholder="+34 600 000 000" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">CIF / NIF</label>
-                                <Input value={editSupplier?.cif || ''} onChange={e => setEditSupplier({ ...editSupplier, cif: e.target.value })} placeholder="B12345678" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Ciudad</label>
-                                <Input value={editSupplier?.ciudad || ''} onChange={e => setEditSupplier({ ...editSupplier, ciudad: e.target.value })} placeholder="Madrid" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">País</label>
-                                <Input value={editSupplier?.pais || 'España'} onChange={e => setEditSupplier({ ...editSupplier, pais: e.target.value })} placeholder="España" />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Dirección</label>
-                                <Input value={editSupplier?.direccion || ''} onChange={e => setEditSupplier({ ...editSupplier, direccion: e.target.value })} placeholder="Calle Mayor 12, 2ºA" />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Categorías de suministro (separadas por coma)</label>
-                                <Input value={editSupplier?.categorias_suministro || ''} onChange={e => setEditSupplier({ ...editSupplier, categorias_suministro: e.target.value })} placeholder="Lácteos,Carnes,Verduras" />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Notas internas</label>
-                                <textarea
-                                    value={editSupplier?.notas || ''}
-                                    onChange={e => setEditSupplier({ ...editSupplier, notas: e.target.value })}
-                                    placeholder="Observaciones..."
-                                    rows={3}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cifp-blue/20 resize-none"
-                                />
-                            </div>
+            {/* ── View / Edit / Create Modal ── */}
+            {detailMode && detailForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={closeDetail}>
+                    <div
+                        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <button type="button" onClick={closeDetail} className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark text-sm font-medium">
+                                <X className="w-4 h-4" />
+                                {detailMode === 'edit' ? 'Cancelar' : 'Cerrar'}
+                            </button>
+                            <h2 className="text-base font-bold text-gray-800 uppercase truncate max-w-xs">
+                                {detailForm.id ? detailForm.nombre || 'Proveedor' : 'Nuevo Proveedor'}
+                            </h2>
                             <div className="flex items-center gap-2">
-                                <input
-                                    id="activo-check"
-                                    type="checkbox"
-                                    checked={!!editSupplier?.activo}
-                                    onChange={e => setEditSupplier({ ...editSupplier, activo: e.target.checked })}
-                                    className="w-4 h-4 rounded text-cifp-blue"
-                                />
-                                <label htmlFor="activo-check" className="text-sm font-medium text-gray-700">Activo</label>
+                                {detailMode === 'view' && isAdmin && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailMode('edit')}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors"
+                                    >
+                                        <Edit className="w-3 h-3" /> Editar
+                                    </button>
+                                )}
+                                {detailMode === 'edit' && (
+                                    <button
+                                        type="button"
+                                        onClick={handleDetailSave}
+                                        disabled={detailSaving}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
+                                    >
+                                        {detailSaving ? 'Guardando...' : detailForm.id ? 'Guardar Cambios' : 'Crear Proveedor'}
+                                    </button>
+                                )}
                             </div>
                         </div>
-                        {formError && (
-                            <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{formError}</p>
-                        )}
-                        <div className="mt-5 flex justify-end gap-2">
-                            <Button variant="secondary" onClick={handleCloseEdit}>Cancelar</Button>
-                            <Button onClick={handleSaveEdit}>Guardar</Button>
+
+                        {/* Body */}
+                        <div className="overflow-y-auto px-6 py-4 flex-1">
+                            <div className="grid grid-cols-12 gap-x-3 gap-y-3">
+
+                                {/* Nombre */}
+                                <div className="col-span-12">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Nombre del Proveedor</label>
+                                    <input
+                                        type="text"
+                                        value={detailForm.nombre || ''}
+                                        onChange={e => handleDetailChange('nombre', e.target.value)}
+                                        disabled={detailMode === 'view'}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-medium text-gray-800"
+                                        placeholder="Ej: Distribuciones García S.L."
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div className="col-span-12 sm:col-span-7">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Email de Contacto</label>
+                                    <input
+                                        type="email"
+                                        value={detailForm.email || ''}
+                                        onChange={e => handleDetailChange('email', e.target.value)}
+                                        disabled={detailMode === 'view'}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-medium text-gray-800"
+                                        placeholder="contacto@empresa.es"
+                                    />
+                                </div>
+
+                                {/* Teléfono */}
+                                <div className="col-span-12 sm:col-span-5">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Teléfono</label>
+                                    <input
+                                        type="tel"
+                                        value={detailForm.telefono || ''}
+                                        onChange={e => handleDetailChange('telefono', e.target.value)}
+                                        disabled={detailMode === 'view'}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 font-medium text-gray-800"
+                                        placeholder="+34 900 000 000"
+                                    />
+                                </div>
+
+                                {/* Notas */}
+                                <div className="col-span-12 sm:col-span-11">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Notas internas</label>
+                                    <textarea
+                                        value={detailForm.notas || ''}
+                                        onChange={e => handleDetailChange('notas', e.target.value)}
+                                        disabled={detailMode === 'view'}
+                                        rows={3}
+                                        placeholder="Condiciones de entrega, contacto, observaciones..."
+                                        className="w-full px-3 py-2 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none resize-none disabled:opacity-75 disabled:cursor-not-allowed bg-white text-gray-700 leading-snug"
+                                    />
+                                </div>
+
+                                {/* Activo */}
+                                <div className="col-span-12 sm:col-span-1 flex items-end pb-1">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={detailForm.activo !== false}
+                                            onChange={e => handleDetailChange('activo', e.target.checked)}
+                                            disabled={detailMode === 'view'}
+                                            className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded"
+                                        />
+                                        <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {formError && (
+                                <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{formError}</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -320,29 +342,14 @@ export default function SuppliersFullPage() {
             {/* ── Toolbar ── */}
             <Card className="p-4 flex-shrink-0">
                 <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Input
-                            placeholder="Buscar nombre, email, ciudad..."
+                            placeholder="Buscar nombre, email, notas..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             icon={Search}
+                            className="sm:col-span-2"
                         />
-                        <select
-                            value={cityFilter}
-                            onChange={e => setCityFilter(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cifp-blue/20"
-                        >
-                            <option value="all">Todas las ciudades</option>
-                            {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <select
-                            value={categoryFilter}
-                            onChange={e => setCategoryFilter(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cifp-blue/20"
-                        >
-                            <option value="all">Todas las categorías</option>
-                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
                         <select
                             value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}
@@ -355,17 +362,14 @@ export default function SuppliersFullPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         {isAdmin && (
-                            <Button className="gap-2" onClick={handleOpenCreate}>
+                            <Button className="gap-2" onClick={openCreate}>
                                 <Plus className="w-4 h-4" /> Nuevo Proveedor
                             </Button>
                         )}
                         {isAdmin && selectedIds.length === 1 && (
-                            <Button className="gap-2" onClick={() => handleOpenEdit(suppliers.find(s => s.id === selectedIds[0]))}>
+                            <Button className="gap-2" onClick={() => openEdit(suppliers.find(s => s.id === selectedIds[0]))}>
                                 <Edit className="w-4 h-4" /> Editar Seleccionado
                             </Button>
-                        )}
-                        {isAdmin && selectedIds.length > 1 && (
-                            <span className="text-xs text-gray-400">Selecciona 1 para editar</span>
                         )}
                         <Button variant="secondary" className="gap-2" onClick={handleResetFilters}>
                             <X className="w-4 h-4" /> Resetear Filtros
@@ -401,11 +405,8 @@ export default function SuppliersFullPage() {
                                     </th>
                                     {[
                                         { key: 'nombre', label: 'Nombre' },
-                                        { key: 'contacto', label: 'Contacto' },
                                         { key: 'email', label: 'Email' },
                                         { key: 'telefono', label: 'Teléfono' },
-                                        { key: 'ciudad', label: 'Ciudad' },
-                                        { key: 'categorias_suministro', label: 'Categorías' },
                                         { key: 'activo', label: 'Estado' },
                                     ].map(col => (
                                         <th
@@ -430,7 +431,7 @@ export default function SuppliersFullPage() {
                                     return (
                                         <tr
                                             key={s.id}
-                                            onDoubleClick={() => isAdmin ? handleOpenEdit(s) : navigate(`/providers/${s.id}`)}
+                                            onDoubleClick={() => navigate(`/providers/${s.id}`)}
                                             className={`transition-colors cursor-pointer ${!s.activo
                                                 ? 'opacity-50 bg-gray-50 hover:bg-gray-100'
                                                 : isSelected ? 'bg-cifp-blue/5 hover:bg-cifp-blue/10' : 'hover:bg-cifp-neutral-50'
@@ -448,74 +449,52 @@ export default function SuppliersFullPage() {
                                                 {s.nombre}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-cifp-neutral-700 whitespace-nowrap">
-                                                {s.contacto || '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-cifp-neutral-700 whitespace-nowrap">
                                                 {s.email ? (
-                                                    <a href={`mailto:${s.email}`} className="text-cifp-blue hover:underline">{s.email}</a>
+                                                    <a href={`mailto:${s.email}`} className="text-cifp-blue hover:underline" onClick={e => e.stopPropagation()}>{s.email}</a>
                                                 ) : '—'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-cifp-neutral-700 whitespace-nowrap">
                                                 {s.telefono || '—'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-cifp-neutral-700 whitespace-nowrap">
-                                                {s.ciudad ? `${s.ciudad}${s.pais && s.pais !== 'España' ? `, ${s.pais}` : ''}` : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-cifp-neutral-600 max-w-[200px]">
-                                                {s.categorias_suministro ? (
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {s.categorias_suministro.split(',').slice(0, 3).map(c => (
-                                                            <span key={c} className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
-                                                                {c.trim()}
-                                                            </span>
-                                                        ))}
-                                                        {s.categorias_suministro.split(',').length > 3 && (
-                                                            <span className="text-xs text-gray-400">+{s.categorias_suministro.split(',').length - 3}</span>
-                                                        )}
-                                                    </div>
-                                                ) : '—'}
-                                            </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
+                                            <td className="px-4 py-3 whitespace-nowrap text-center">
                                                 {s.activo
                                                     ? <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
                                                     : <XCircle className="w-5 h-5 text-gray-400 mx-auto" />}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-center">
-                                                <div className="flex items-center justify-center gap-2">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <button
+                                                        onClick={() => navigate(`/providers/${s.id}`)}
+                                                        className="p-2 text-cifp-neutral-500 hover:text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                                        title="Ver Detalle"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
                                                     {isAdmin && (
                                                         <button
-                                                            onClick={() => handleOpenEdit(s)}
-                                                            className="p-1 text-cifp-blue hover:bg-cifp-blue/10 rounded transition-colors"
+                                                            onClick={() => openEdit(s)}
+                                                            className="p-2 text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                                             title="Editar"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
                                                     )}
                                                     {isAdmin && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleToggleActive(s.id)}
-                                                                className="p-1 text-cifp-blue hover:bg-cifp-blue/10 rounded transition-colors"
-                                                                title={s.activo ? 'Desactivar' : 'Activar'}
-                                                            >
-                                                                {s.activo ? <XCircle className="w-4 h-4 text-gray-500" /> : <CheckCircle className="w-4 h-4 text-green-500" />}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(s.id)}
-                                                                className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                                                                title="Eliminar"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {!isAdmin && (
                                                         <button
-                                                            onClick={() => navigate(`/providers/${s.id}`)}
-                                                            className="p-1 text-cifp-blue hover:bg-cifp-blue/10 rounded transition-colors"
-                                                            title="Ver detalle"
+                                                            onClick={() => handleToggleActive(s.id)}
+                                                            className="p-2 hover:bg-cifp-blue/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                                            title={s.activo ? 'Desactivar' : 'Activar'}
                                                         >
-                                                            <Edit className="w-4 h-4" />
+                                                            {s.activo ? <XCircle className="w-4 h-4 text-gray-500" /> : <CheckCircle className="w-4 h-4 text-green-500" />}
+                                                        </button>
+                                                    )}
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={() => handleDelete(s.id)}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     )}
                                                 </div>

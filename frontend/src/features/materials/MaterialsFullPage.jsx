@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus,
-    Edit, Trash2, ArrowLeft, Download, AlertTriangle, ClipboardList
+    Edit, Trash2, ArrowLeft, Download, AlertTriangle, ClipboardList, Eye
 } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
@@ -26,8 +26,10 @@ export default function MaterialsFullPage() {
     const [sortDirection, setSortDirection] = useState('asc')
     const [selectedIds, setSelectedIds] = useState([])
     const [showOnlyLowStock, setShowOnlyLowStock] = useState(false)
-    const [isEditing, setIsEditing] = useState(false)
-    const [editProduct, setEditProduct] = useState(null)
+    const [detailProduct, setDetailProduct] = useState(null)
+    const [detailMode, setDetailMode] = useState(null) // null | 'view' | 'edit'
+    const [detailForm, setDetailForm] = useState(null)
+    const [detailSaving, setDetailSaving] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -127,29 +129,55 @@ export default function MaterialsFullPage() {
         URL.revokeObjectURL(url)
     }
 
-    const handleOpenEdit = (product) => { setEditProduct(product); setIsEditing(true) }
-    const handleCloseEdit = () => { setEditProduct(null); setIsEditing(false) }
+    const MATERIAL_CATEGORIES = ['Utensilios', 'Packaging', 'Limpieza', 'Seguridad', 'Mobiliario', 'Maquinaria', 'Papelería', 'Otros']
+    const UNITS = ['unidad', 'kg', 'L', 'caja', 'm', 'm²']
 
-    const handleSaveEdit = async (updated) => {
-        if (!updated) return
+    const openDetailView = (product) => {
+        setDetailProduct(product)
+        setDetailForm({ ...product })
+        setDetailMode('view')
+    }
+
+    const openDetailEdit = (product) => {
+        setDetailProduct(product)
+        setDetailForm({ ...product })
+        setDetailMode('edit')
+    }
+
+    const openDetailCreate = () => {
+        const empty = { nombre: '', sku: '', categoria: 'Utensilios', proveedor: '', stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad', rendimiento: 1.0, descripcion: '', activo: true }
+        setDetailProduct(empty)
+        setDetailForm(empty)
+        setDetailMode('edit')
+    }
+
+    const closeDetail = () => {
+        setDetailProduct(null)
+        setDetailForm(null)
+        setDetailMode(null)
+    }
+
+    const handleDetailChange = (field, value) => {
+        setDetailForm(prev => ({ ...prev, [field]: value }))
+    }
+
+    const handleDetailSave = async () => {
+        if (!detailForm) return
+        setDetailSaving(true)
         try {
-            const isExisting = updated.id && products.some(p => p.id === updated.id && !String(p.id).startsWith('id_'))
+            const isExisting = detailForm.id && products.some(p => p.id === detailForm.id)
             if (isExisting) {
-                const res = await apiFetch(`/products/${updated.id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(updated),
-                })
+                const res = await apiFetch(`/products/${detailForm.id}`, { method: 'PUT', body: JSON.stringify(detailForm) })
                 setProducts(products.map(p => p.id === res.id ? res : p))
             } else {
-                const res = await apiFetch('/products', {
-                    method: 'POST',
-                    body: JSON.stringify(updated),
-                })
+                const res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(detailForm) })
                 setProducts([res, ...products])
             }
-            handleCloseEdit()
+            closeDetail()
         } catch (err) {
             alert(`Error: ${err?.body?.message || err.message}`)
+        } finally {
+            setDetailSaving(false)
         }
     }
 
@@ -185,26 +213,140 @@ export default function MaterialsFullPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-12rem)] short:h-[calc(100vh-8rem)] space-y-4 pb-4 short:space-y-2 short:pb-2">
 
-            {/* Edit / Create Modal */}
-            {isEditing && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-                        <h3 className="text-lg font-semibold mb-4">
-                            {editProduct?.id ? 'Editar Material' : 'Crear Material'}
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Input value={editProduct?.nombre || ''} onChange={e => setEditProduct({ ...editProduct, nombre: e.target.value })} placeholder="Nombre" />
-                            <Input value={editProduct?.sku || ''} onChange={e => setEditProduct({ ...editProduct, sku: e.target.value })} placeholder="SKU (MAT_XXXX)" />
-                            <Input value={editProduct?.categoria || ''} onChange={e => setEditProduct({ ...editProduct, categoria: e.target.value })} placeholder="Categoría" />
-                            <Input value={editProduct?.proveedor || ''} onChange={e => setEditProduct({ ...editProduct, proveedor: e.target.value })} placeholder="Proveedor" />
-                            <Input type="number" value={editProduct?.stock ?? 0} onChange={e => setEditProduct({ ...editProduct, stock: Number(e.target.value) })} placeholder="Stock" />
-                            <Input type="number" value={editProduct?.stockMinimo ?? 0} onChange={e => setEditProduct({ ...editProduct, stockMinimo: Number(e.target.value) })} placeholder="Stock mínimo" />
-                            <Input type="number" value={editProduct?.precio ?? 0} onChange={e => setEditProduct({ ...editProduct, precio: Number(e.target.value) })} placeholder="Precio (€)" />
-                            <Input value={editProduct?.unidad || ''} onChange={e => setEditProduct({ ...editProduct, unidad: e.target.value })} placeholder="Unidad" />
+            {/* Detail / Edit Modal */}
+            {detailMode && detailForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={closeDetail}>
+                    <div
+                        className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 flex flex-col max-h-[90vh]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <button type="button" onClick={closeDetail} className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark text-sm font-medium">
+                                <X className="w-4 h-4" />
+                                {detailMode === 'edit' ? 'Cancelar edición' : 'Cerrar'}
+                            </button>
+                            <h2 className="text-base font-bold text-gray-800 uppercase truncate max-w-xs">
+                                {detailForm.id ? detailForm.nombre || 'Material' : 'Nuevo Material'}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                {detailMode === 'view' && !isRegularUser && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailMode('edit')}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors"
+                                    >
+                                        <Edit className="w-3 h-3" /> Editar
+                                    </button>
+                                )}
+                                {detailMode === 'edit' && (
+                                    <button
+                                        type="button"
+                                        onClick={handleDetailSave}
+                                        disabled={detailSaving}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
+                                    >
+                                        {detailSaving ? 'Guardando...' : detailForm.id ? 'Guardar Cambios' : 'Crear Material'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <div className="mt-4 flex justify-end gap-2">
-                            <Button variant="secondary" onClick={handleCloseEdit}>Cancelar</Button>
-                            <Button onClick={() => handleSaveEdit(editProduct)}>Guardar</Button>
+
+                        {/* Modal form body */}
+                        <div className="overflow-y-auto px-6 py-4 flex-1">
+                            <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+
+                                {/* Nombre */}
+                                <div className="col-span-12 sm:col-span-8">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Nombre del Material</label>
+                                    <input type="text" value={detailForm.nombre} onChange={e => handleDetailChange('nombre', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-medium text-gray-800"
+                                        placeholder="Ej: Cuchillo Chef 20cm" />
+                                </div>
+
+                                {/* Unidad */}
+                                <div className="col-span-6 sm:col-span-4">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Unidad de Medida</label>
+                                    <select value={detailForm.unidad} onChange={e => handleDetailChange('unidad', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 font-medium text-gray-800">
+                                        {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* SKU */}
+                                <div className="col-span-12 sm:col-span-6">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <input type="text" value={detailForm.sku} onChange={e => handleDetailChange('sku', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-mono text-gray-800"
+                                        placeholder="MAT-0001" />
+                                </div>
+
+                                {/* Descripción */}
+                                <div className="col-span-12">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Descripción</label>
+                                    <textarea value={detailForm.descripcion} onChange={e => handleDetailChange('descripcion', e.target.value)} disabled={detailMode === 'view'}
+                                        rows={2} placeholder="Descripción del material..."
+                                        className="w-full px-2 py-1 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:opacity-75 disabled:cursor-not-allowed text-gray-700 leading-tight" />
+                                </div>
+
+                                {/* Precio */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Precio/Unidad</label>
+                                    <div className="relative">
+                                        <input type="number" step="0.01" value={detailForm.precio} onChange={e => handleDetailChange('precio', parseFloat(e.target.value) || 0)} disabled={detailMode === 'view'}
+                                            className="w-full px-2 h-9 text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
+                                        <span className="absolute right-2 top-2 text-[10px] text-gray-400">€</span>
+                                    </div>
+                                </div>
+
+                                {/* Stock */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className={`block text-[10px] uppercase font-bold mb-1 ${detailForm.stock < detailForm.stockMinimo ? 'text-red-600' : 'text-gray-800'}`}>Stock</label>
+                                    <input type="number" value={detailForm.stock} onChange={e => handleDetailChange('stock', parseInt(e.target.value, 10) || 0)} disabled={detailMode === 'view'}
+                                        className={`w-full px-2 h-9 text-sm border rounded-lg focus:ring-2 outline-none disabled:opacity-75 font-medium text-gray-800 ${detailForm.stock < detailForm.stockMinimo ? 'bg-red-50 border-red-200 focus:ring-red-500' : 'bg-gray-50 border-gray-200 focus:ring-gray-500'}`} />
+                                </div>
+
+                                {/* Stock Mínimo */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <input type="number" value={detailForm.stockMinimo} onChange={e => handleDetailChange('stockMinimo', parseInt(e.target.value, 10) || 0)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-lg bg-gray-50 border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
+                                </div>
+
+                                {/* Rendimiento */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento</label>
+                                    <input type="number" step="0.001" value={detailForm.rendimiento} onChange={e => handleDetailChange('rendimiento', parseFloat(e.target.value) || 0)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
+                                </div>
+
+                                {/* Categoría */}
+                                <div className="col-span-12 sm:col-span-6">
+                                    <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
+                                    <select value={detailForm.categoria} onChange={e => handleDetailChange('categoria', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800">
+                                        <option value="">Selecciona</option>
+                                        {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Proveedor */}
+                                <div className="col-span-12 sm:col-span-5">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
+                                    <input type="text" value={detailForm.proveedor} onChange={e => handleDetailChange('proveedor', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
+                                        placeholder="Nombre del proveedor" />
+                                </div>
+
+                                {/* Activo */}
+                                <div className="col-span-12 sm:col-span-1 flex items-end pb-2">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="checkbox" checked={detailForm.activo} onChange={e => handleDetailChange('activo', e.target.checked)} disabled={detailMode === 'view'}
+                                            className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded" />
+                                        <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -289,11 +431,7 @@ export default function MaterialsFullPage() {
                             <Button
                                 variant="primary"
                                 className="gap-2 short:h-8 short:text-xs short:px-2"
-                                onClick={() => handleOpenEdit({
-                                    nombre: '', sku: '', categoria: '', proveedor: '',
-                                    stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad',
-                                    descripcion: '', activo: true,
-                                })}
+                                onClick={openDetailCreate}
                             >
                                 <Plus className="w-4 h-4 short:hidden" />
                                 Crear Material
@@ -308,7 +446,7 @@ export default function MaterialsFullPage() {
                                 title={selectedIds.length === 0 ? 'Selecciona al menos un material' : ''}
                                 onClick={() => {
                                     const p = products.find(x => x.id === selectedIds[0])
-                                    if (p) handleOpenEdit(p)
+                                    if (p) openDetailEdit(p)
                                 }}
                             >
                                 <Edit className="w-4 h-4 short:hidden" />
@@ -376,10 +514,7 @@ export default function MaterialsFullPage() {
                                 return (
                                     <tr
                                         key={material.id}
-                                        onDoubleClick={() => isRegularUser
-                                            ? navigate(`/inventory/${material.id}`)
-                                            : handleOpenEdit(material)
-                                        }
+                                        onDoubleClick={() => navigate(`/inventory/${material.id}`)}
                                         className={`transition-colors cursor-pointer ${isLowStock
                                             ? 'bg-cifp-red-light/10 hover:bg-cifp-red-light/20'
                                             : isSelected
@@ -416,16 +551,23 @@ export default function MaterialsFullPage() {
                                             €{Number(material.precio).toFixed(2)}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-center short:px-2 short:py-1">
-                                            <div className="flex items-center justify-center gap-2">
+                                            <div className="flex items-center justify-center gap-1">
                                                 <button
-                                                    onClick={() => navigate(`/inventory/${material.id}${!isRegularUser ? '?edit=1' : ''}`)}
-                                                    className="p-1 text-cifp-blue hover:bg-cifp-blue/10 rounded transition-colors"
+                                                    onClick={() => navigate(`/inventory/${material.id}`)}
+                                                    className="p-2 text-cifp-neutral-500 hover:text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                                    title="Ver Detalle"
+                                                >
+                                                    <Eye className="w-4 h-4 short:w-3 short:h-3" />
+                                                </button>
+                                                <button
+                                                    onClick={() => isRegularUser ? openDetailView(material) : openDetailEdit(material)}
+                                                    className="p-2 text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                                     title={isRegularUser ? 'Ver detalle' : 'Editar'}
                                                 >
                                                     <Edit className="w-4 h-4 short:w-3 short:h-3" />
                                                 </button>
                                                 <button
-                                                    className="p-1 text-cifp-red hover:bg-cifp-red/10 rounded transition-colors"
+                                                    className="p-2 text-cifp-red hover:bg-cifp-red/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                                     disabled={isRegularUser}
                                                     title={isRegularUser ? 'Solo administradores pueden eliminar' : 'Eliminar'}
                                                     onClick={() => handleDelete(material.id)}

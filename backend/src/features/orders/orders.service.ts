@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
@@ -20,33 +25,43 @@ export class OrdersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Obtiene todos los pedidos con paginación
-   */
   async findAllPaginated(
     paginationDto: PaginationQueryDto,
+    statusFilter?: OrderStatus,
   ): Promise<PaginatedResponse<Order>> {
-    return this.paginationService.paginateRepository(
-      this.ordersRepository,
-      paginationDto,
-    );
+    const qb = this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.creator', 'creator')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .orderBy('order.createdAt', 'DESC');
+
+    if (statusFilter) {
+      qb.where('order.status = :status', { status: statusFilter });
+    }
+
+    return this.paginationService.paginate<Order>(qb, paginationDto);
   }
 
-  /**
-   * Obtiene todos los pedidos
-   */
-  async findAll(): Promise<Order[]> {
-    return this.ordersRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findByCreator(
+    userId: string,
+    paginationDto: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Order>> {
+    const qb = this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.creator', 'creator')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('order.createdBy = :userId', { userId })
+      .orderBy('order.createdAt', 'DESC');
+
+    return this.paginationService.paginate<Order>(qb, paginationDto);
   }
 
-  /**
-   * Obtiene un pedido por ID
-   */
   async findOne(id: string): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { id },
+      relations: ['items', 'items.product', 'creator'],
     });
 
     if (!order) {
@@ -56,104 +71,214 @@ export class OrdersService {
     return order;
   }
 
-  /**
-   * Obtiene pedidos por usuario con paginación
-   */
-  async findByUsuarioPaginated(
-    usuarioId: string,
-    paginationDto: PaginationQueryDto,
-  ): Promise<PaginatedResponse<Order>> {
-    return this.paginationService.paginateRepository(
-      this.ordersRepository,
-      paginationDto,
-      { usuarioId },
-    );
-  }
-
-  /**
-   * Obtiene pedidos por usuario
-   */
-  async findByUsuario(usuarioId: string): Promise<Order[]> {
-    return this.ordersRepository.find({
-      where: { usuarioId },
-      order: { createdAt: 'DESC' },
+  async create(createOrderDto: CreateOrderDto, createdBy: string): Promise<Order> {
+    const order = this.ordersRepository.create({
+      createdBy,
+      classId: createOrderDto.classId ?? null,
+      weekStart: createOrderDto.weekStart,
+      status: OrderStatus.DRAFT,
     });
+    const saved = await this.ordersRepository.save(order);
+    return this.findOne(saved.id);
   }
 
-  /**
-   * Crea un nuevo pedido
-   */
-  async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    // Generar número de orden si no se proporciona
-    if (!createOrderDto.numeroOrden) {
-      createOrderDto.numeroOrden = `ORD-${Date.now()}`;
-    }
-    
-    const order = this.ordersRepository.create(createOrderDto);
-    return this.ordersRepository.save(order);
-  }
-
-  /**
-   * Crea un pedido con items en una transacción
-   * Garantiza que si algo falla, todo se revierte
-   */
   async createWithItems(
-    createOrderDto: CreateOrderDto,
-    items: Array<{ productoId: string; cantidad: number; precioUnitario: number }>,
+    dto: CreateOrderDto,
+    items: Array<{ productId: string; qtyRequested: number; notes?: string }>,
+    createdBy: string,
   ): Promise<Order> {
-    return await this.dataSource.transaction(async (manager) => {
-      // Generar número de orden si no se proporciona
-      if (!createOrderDto.numeroOrden) {
-        createOrderDto.numeroOrden = `ORD-${Date.now()}`;
-      }
-      
-      // Crear la orden
-      const order = manager.create(Order, createOrderDto);
-      const savedOrder = await manager.save(order);
+    let savedOrderId: string;
 
-      // Crear los items del pedido
+    await this.dataSource.transaction(async (manager) => {
+      const order = manager.create(Order, {
+        createdBy,
+        classId: dto.classId ?? null,
+        weekStart: dto.weekStart,
+        status: OrderStatus.DRAFT,
+      });
+      const savedOrder = await manager.save(order);
+      savedOrderId = savedOrder.id;
+
       for (const item of items) {
         const orderItem = manager.create(OrderItem, {
-          ...item,
           orderId: savedOrder.id,
+          productId: item.productId,
+          qtyRequested: item.qtyRequested,
+          notes: item.notes ?? null,
         });
         await manager.save(orderItem);
       }
-
-      return savedOrder;
     });
+
+    return this.findOne(savedOrderId!);
   }
 
-  /**
-   * Actualiza el estado de un pedido
-   */
-  async updateStatus(id: string, estado: OrderStatus): Promise<Order> {
-    await this.findOne(id);
-    await this.ordersRepository.update(id, { estado });
+  async submit(id: string, requestingUserId: string): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.createdBy !== requestingUserId) {
+      throw new ForbiddenException('Solo el creador del pedido puede enviarlo');
+    }
+    if (order.status !== OrderStatus.DRAFT) {
+      throw new BadRequestException(`El pedido esta en estado "${order.status}" y no puede ser enviado`);
+    }
+    if (!order.items || order.items.length === 0) {
+      throw new BadRequestException('El pedido no tiene items; anyade al menos un producto');
+    }
+
+    await this.ordersRepository.update(id, { status: OrderStatus.SUBMITTED });
     return this.findOne(id);
   }
 
-  /**
-   * Actualiza un pedido
-   */
-  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
-    await this.findOne(id);
-    await this.ordersRepository.update(id, updateOrderDto);
+  async approve(id: string): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.status !== OrderStatus.SUBMITTED) {
+      throw new BadRequestException(`El pedido esta en estado "${order.status}" y no puede ser aprobado`);
+    }
+
+    await this.ordersRepository.update(id, { status: OrderStatus.APPROVED });
     return this.findOne(id);
   }
 
-  /**
-   * Cancela un pedido
-   */
-  async cancel(id: string): Promise<Order> {
-    return this.updateStatus(id, OrderStatus.CANCELLED);
+  async reject(id: string): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.status !== OrderStatus.SUBMITTED) {
+      throw new BadRequestException(`El pedido esta en estado "${order.status}" y no puede ser rechazado`);
+    }
+
+    await this.ordersRepository.update(id, { status: OrderStatus.CANCELLED });
+    return this.findOne(id);
   }
 
-  /**
-   * Elimina un pedido
-   */
+  async consolidate(
+    orderIds: string[],
+    weekStart: string,
+    supplierId: string | undefined,
+    consolidatedBy: string,
+  ): Promise<Order> {
+    if (!orderIds.length) {
+      throw new BadRequestException('Debes seleccionar al menos un pedido para consolidar');
+    }
+
+    let savedConsolidatedId: string;
+
+    await this.dataSource.transaction(async (manager) => {
+      const orders = await manager.find(Order, {
+        where: { id: In(orderIds) },
+        relations: ['items', 'items.product'],
+      });
+
+      if (orders.length !== orderIds.length) {
+        throw new NotFoundException('Alguno de los pedidos no existe');
+      }
+
+      const notApproved = orders.filter((o) => o.status !== OrderStatus.APPROVED);
+      if (notApproved.length > 0) {
+        throw new BadRequestException(`Pedidos no aprobados: ${notApproved.map((o) => o.id).join(', ')}`);
+      }
+
+      const consolidated = manager.create(Order, {
+        createdBy: consolidatedBy,
+        classId: null,
+        supplierId: supplierId ?? null,
+        weekStart,
+        status: OrderStatus.ORDERED,
+      });
+      const savedConsolidated = await manager.save(consolidated);
+      savedConsolidatedId = savedConsolidated.id;
+
+      const itemMap = new Map<string, { productId: string; qtyRequested: number; notes: string[] }>();
+      for (const order of orders) {
+        for (const item of order.items) {
+          const existing = itemMap.get(item.productId);
+          if (existing) {
+            existing.qtyRequested += Number(item.qtyRequested);
+            if (item.notes) existing.notes.push(item.notes);
+          } else {
+            itemMap.set(item.productId, {
+              productId: item.productId,
+              qtyRequested: Number(item.qtyRequested),
+              notes: item.notes ? [item.notes] : [],
+            });
+          }
+        }
+      }
+
+      for (const [, item] of itemMap) {
+        const consolidatedItem = manager.create(OrderItem, {
+          orderId: savedConsolidated.id,
+          productId: item.productId,
+          qtyRequested: item.qtyRequested,
+          notes: item.notes.join('; ') || null,
+        });
+        await manager.save(consolidatedItem);
+      }
+
+      await manager.update(Order, { id: In(orderIds) }, {
+        status: OrderStatus.MERGED,
+        mergedIntoOrderId: savedConsolidated.id,
+      });
+    });
+
+    return this.findOne(savedConsolidatedId!);
+  }
+
+  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
+    await this.findOne(id);
+    await this.ordersRepository.update(id, { status });
+    return this.findOne(id);
+  }
+
+  async cancel(id: string, requestingUserId: string): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.createdBy !== requestingUserId) {
+      throw new ForbiddenException('Solo el creador puede cancelar su pedido');
+    }
+    if (order.status !== OrderStatus.DRAFT) {
+      throw new BadRequestException(`No se puede cancelar un pedido en estado "${order.status}"`);
+    }
+
+    await this.ordersRepository.update(id, { status: OrderStatus.CANCELLED });
+    return this.findOne(id);
+  }
+
   async delete(id: string): Promise<void> {
     await this.findOne(id);
     await this.ordersRepository.delete(id);
+  }
+
+  async updateForEconomato(id: string, dto: UpdateOrderDto): Promise<Order> {
+    await this.findOne(id); // ensure exists
+
+    await this.dataSource.transaction(async (manager) => {
+      const updates: Partial<Order> = {};
+      if (dto.status !== undefined) updates.status = dto.status;
+      if (dto.weekStart !== undefined) updates.weekStart = dto.weekStart;
+      if (dto.supplierId !== undefined) updates.supplierId = dto.supplierId;
+
+      if (Object.keys(updates).length > 0) {
+        await manager.update(Order, id, updates);
+      }
+
+      if (dto.items !== undefined) {
+        // Replace all items for this order
+        await manager.delete(OrderItem, { orderId: id });
+        for (const item of dto.items) {
+          const newItem = manager.create(OrderItem, {
+            orderId: id,
+            productId: item.productId,
+            qtyRequested: item.qtyRequested,
+            qtyApproved: item.qtyApproved ?? null,
+            notes: item.notes ?? null,
+          });
+          await manager.save(newItem);
+        }
+      }
+    });
+
+    return this.findOne(id);
   }
 }

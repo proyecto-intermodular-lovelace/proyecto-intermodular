@@ -6,7 +6,9 @@ import {
   Get, 
   Body, 
   UseInterceptors, 
-  ClassSerializerInterceptor 
+  ClassSerializerInterceptor,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -66,6 +68,20 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Get('me')
     getProfile(@Request() req) {
-        return req.user;
+        return this.authService.getMe(req.user.userId);
+    }
+
+    @ApiBearerAuth('jwt')
+    @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+    @ApiResponse({ status: 204, description: 'Contraseña cambiada correctamente' })
+    @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
+    @UseGuards(JwtAuthGuard)
+    @Post('change-password')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async changePassword(
+      @Request() req,
+      @Body() body: { currentPassword: string; newPassword: string },
+    ): Promise<void> {
+      return this.authService.changePassword(req.user.userId, body.currentPassword, body.newPassword)
     }
 }

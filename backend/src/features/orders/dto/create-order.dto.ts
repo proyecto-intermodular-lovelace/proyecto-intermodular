@@ -1,46 +1,29 @@
-import { IsString, IsNumber, IsOptional, Matches, Min } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateOrderDto {
   @ApiProperty({
-    example: 'ORD-2025-001',
-    description: 'Número único de orden',
-    required: false,
+    example: '2025-01-06',
+    description: 'Fecha de inicio de la semana del pedido (lunes)',
   })
-  @IsOptional()
-  @IsString()
-  numeroOrden?: string;
+  @IsDateString()
+  weekStart: string;
 
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'UUID del usuario que realiza la orden',
+    description: 'UUID de la clase que genera el pedido',
+    required: false,
   })
-  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
-  usuarioId: string;
+  @IsOptional()
+  @IsUUID()
+  classId?: string;
 
   @ApiProperty({
-    example: 5999.99,
-    description: 'Monto total de la orden',
-  })
-  @IsNumber()
-  @Min(0)
-  montoTotal: number;
-
-  @ApiProperty({
-    example: 'Entregar en recepción',
-    description: 'Observaciones sobre la orden',
+    example: 'Necesitamos los ingredientes para la práctica de pastelería',
+    description: 'Notas adicionales del pedido',
     required: false,
   })
   @IsOptional()
   @IsString()
-  observaciones?: string;
-
-  @ApiProperty({
-    example: 'Calle 123, Apto 4B, Buenos Aires',
-    description: 'Domicilio de entrega',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  domicilioEntrega?: string;
+  notes?: string;
 }

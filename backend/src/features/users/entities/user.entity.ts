@@ -40,7 +40,7 @@ export class User {
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 
-  @OneToMany('Order', 'usuario')
+  @OneToMany('Order', 'creator')
   orders: any[];
 
   @OneToMany('Incident', 'usuario')

@@ -2,8 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   Index,
@@ -13,7 +11,7 @@ import { Product } from '../../products/entities/product.entity';
 
 @Entity('order_items')
 @Index(['orderId'])
-@Index(['productoId'])
+@Index(['productId'])
 export class OrderItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,22 +23,19 @@ export class OrderItem {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @Column({ type: 'uuid', name: 'producto_id' })
-  productoId: string;
+  @Column({ type: 'uuid', name: 'product_id' })
+  productId: string;
 
-  @ManyToOne(() => Product, (product) => product.orderItems, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'producto_id' })
-  producto: Product;
+  @ManyToOne(() => Product, { onDelete: 'RESTRICT', eager: false })
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 
-  @Column({ type: 'int' })
-  cantidad: number;
+  @Column({ type: 'decimal', precision: 12, scale: 3, name: 'qty_requested' })
+  qtyRequested: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'precio_unitario' })
-  precioUnitario: number;
+  @Column({ type: 'decimal', precision: 12, scale: 3, name: 'qty_approved', nullable: true })
+  qtyApproved: number | null;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 }

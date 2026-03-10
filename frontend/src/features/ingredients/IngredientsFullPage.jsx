@@ -22,6 +22,7 @@ export default function IngredientsFullPage() {
     const [showOnlyLowStock, setShowOnlyLowStock] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [editProduct, setEditProduct] = useState(null)
+    const [detailSaving, setDetailSaving] = useState(false)
 
     // Get unique categories and providers from loaded products
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria || ''))].filter(Boolean).sort(), [products])
@@ -149,7 +150,7 @@ export default function IngredientsFullPage() {
     }
 
     const handleOpenEdit = (product) => {
-        setEditProduct(product)
+        setEditProduct({ descripcion: '', activo: true, ...product })
         setIsEditing(true)
     }
 
@@ -163,6 +164,7 @@ export default function IngredientsFullPage() {
 
     const handleSaveEdit = async (updated) => {
         if (!updated) return
+        setDetailSaving(true)
         try {
             // Determine create vs update by presence of id and whether it looks like a client-only id
             const isExisting = updated.id && products.some(p => p.id === updated.id && !String(p.id).startsWith('id_'))
@@ -182,6 +184,8 @@ export default function IngredientsFullPage() {
             handleCloseEdit()
         } catch (err) {
             alert(`Error: ${err?.body?.message || err.message}`)
+        } finally {
+            setDetailSaving(false)
         }
     }
 
@@ -219,24 +223,174 @@ export default function IngredientsFullPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-12rem)] short:h-[calc(100vh-8rem)] space-y-4 pb-4 short:space-y-2 short:pb-2">
             {/* Edit/Create Modal */}
-            {isEditing && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-                        <h3 className="text-lg font-semibold mb-4">{editProduct?.id ? 'Editar Producto' : 'Crear Producto'}</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Input value={editProduct?.nombre || ''} onChange={(e) => setEditProduct({ ...editProduct, nombre: e.target.value })} placeholder="Nombre" />
-                            <Input value={editProduct?.sku || ''} onChange={(e) => setEditProduct({ ...editProduct, sku: e.target.value })} placeholder="SKU" />
-                            <Input value={editProduct?.categoria || ''} onChange={(e) => setEditProduct({ ...editProduct, categoria: e.target.value })} placeholder="Categoría" />
-                            <Input value={editProduct?.proveedor || ''} onChange={(e) => setEditProduct({ ...editProduct, proveedor: e.target.value })} placeholder="Proveedor" />
-                            <Input type="number" value={editProduct?.stock ?? 0} onChange={(e) => setEditProduct({ ...editProduct, stock: Number(e.target.value) })} placeholder="Stock" />
-                            <Input type="number" value={editProduct?.stockMinimo ?? 0} onChange={(e) => setEditProduct({ ...editProduct, stockMinimo: Number(e.target.value) })} placeholder="Stock mínimo" />
-                            <Input type="number" value={editProduct?.precio ?? 0} onChange={(e) => setEditProduct({ ...editProduct, precio: Number(e.target.value) })} placeholder="Precio" />
-                            <Input value={editProduct?.unidad || ''} onChange={(e) => setEditProduct({ ...editProduct, unidad: e.target.value })} placeholder="Unidad" />
+            {isEditing && editProduct && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleCloseEdit}>
+                    <div
+                        className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 flex flex-col max-h-[90vh]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <button type="button" onClick={handleCloseEdit} className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark text-sm font-medium">
+                                <X className="w-4 h-4" />
+                                Cancelar
+                            </button>
+                            <h2 className="text-base font-bold text-gray-800 uppercase truncate max-w-xs">
+                                {editProduct.id ? editProduct.nombre || 'Ingrediente' : 'Nuevo Ingrediente'}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => handleSaveEdit(editProduct)}
+                                disabled={detailSaving}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
+                            >
+                                {detailSaving ? 'Guardando...' : editProduct.id ? 'Guardar Cambios' : 'Crear Ingrediente'}
+                            </button>
                         </div>
 
-                        <div className="mt-4 flex justify-end gap-2">
-                            <Button variant="secondary" onClick={handleCloseEdit}>Cancelar</Button>
-                            <Button onClick={() => handleSaveEdit(editProduct)}>Guardar</Button>
+                        {/* Modal form body */}
+                        <div className="overflow-y-auto px-6 py-4 flex-1">
+                            <div className="grid grid-cols-12 gap-x-3 gap-y-3">
+
+                                {/* Nombre */}
+                                <div className="col-span-12 sm:col-span-8">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Nombre del Ingrediente</label>
+                                    <input
+                                        type="text"
+                                        value={editProduct.nombre || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, nombre: e.target.value })}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800"
+                                        placeholder="Ej: Harina de trigo"
+                                    />
+                                </div>
+
+                                {/* Unidad */}
+                                <div className="col-span-6 sm:col-span-4">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Unidad de Medida</label>
+                                    <select
+                                        value={editProduct.unidad || 'kg'}
+                                        onChange={e => setEditProduct({ ...editProduct, unidad: e.target.value })}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none font-medium text-gray-800"
+                                    >
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="L">L</option>
+                                        <option value="mL">mL</option>
+                                        <option value="unidad">unidad</option>
+                                    </select>
+                                </div>
+
+                                {/* SKU */}
+                                <div className="col-span-12 sm:col-span-6">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <input
+                                        type="text"
+                                        value={editProduct.sku || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, sku: e.target.value })}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-gray-800"
+                                        placeholder="ING-0001"
+                                    />
+                                </div>
+
+                                {/* Descripción */}
+                                <div className="col-span-12">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Descripción</label>
+                                    <textarea
+                                        value={editProduct.descripcion || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, descripcion: e.target.value })}
+                                        rows={2}
+                                        placeholder="Descripción del ingrediente..."
+                                        className="w-full px-3 py-2 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-gray-700 leading-tight"
+                                    />
+                                </div>
+
+                                {/* Precio */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Precio / Unidad</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editProduct.precio ?? 0}
+                                            onChange={e => setEditProduct({ ...editProduct, precio: parseFloat(e.target.value) || 0 })}
+                                            className="w-full px-3 h-9 text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none font-medium text-gray-800"
+                                        />
+                                        <span className="absolute right-2 top-2.5 text-[10px] text-gray-400">€</span>
+                                    </div>
+                                </div>
+
+                                {/* Stock */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className={`block text-[10px] uppercase font-bold mb-1 ${(editProduct.stock ?? 0) < (editProduct.stockMinimo ?? 0) ? 'text-red-600' : 'text-gray-800'}`}>Stock</label>
+                                    <input
+                                        type="number"
+                                        value={editProduct.stock ?? 0}
+                                        onChange={e => setEditProduct({ ...editProduct, stock: parseInt(e.target.value, 10) || 0 })}
+                                        className={`w-full px-3 h-9 text-sm border rounded-lg focus:ring-2 outline-none font-medium text-gray-800 ${(editProduct.stock ?? 0) < (editProduct.stockMinimo ?? 0) ? 'bg-red-50 border-red-200 focus:ring-red-500' : 'bg-gray-50 border-gray-200 focus:ring-gray-500'}`}
+                                    />
+                                </div>
+
+                                {/* Stock Mínimo */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <input
+                                        type="number"
+                                        value={editProduct.stockMinimo ?? 0}
+                                        onChange={e => setEditProduct({ ...editProduct, stockMinimo: parseInt(e.target.value, 10) || 0 })}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-gray-50 border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none font-medium text-gray-800"
+                                    />
+                                </div>
+
+                                {/* Rendimiento */}
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento (%)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editProduct.rendimiento ?? 80}
+                                        onChange={e => setEditProduct({ ...editProduct, rendimiento: parseFloat(e.target.value) || 0 })}
+                                        className="w-full px-3 h-9 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none font-medium text-gray-800"
+                                    />
+                                </div>
+
+                                {/* Categoría */}
+                                <div className="col-span-12 sm:col-span-6">
+                                    <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
+                                    <input
+                                        type="text"
+                                        value={editProduct.categoria || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, categoria: e.target.value })}
+                                        className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none bg-white font-medium text-gray-800"
+                                        placeholder="Ej: Lácteos, Carnes, Verduras..."
+                                    />
+                                </div>
+
+                                {/* Proveedor */}
+                                <div className="col-span-12 sm:col-span-5">
+                                    <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
+                                    <input
+                                        type="text"
+                                        value={editProduct.proveedor || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, proveedor: e.target.value })}
+                                        className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white font-medium text-gray-800"
+                                        placeholder="Nombre del proveedor"
+                                    />
+                                </div>
+
+                                {/* Activo */}
+                                <div className="col-span-12 sm:col-span-1 flex items-end pb-1">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={editProduct.activo !== false}
+                                            onChange={e => setEditProduct({ ...editProduct, activo: e.target.checked })}
+                                            className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded"
+                                        />
+                                        <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                    </label>
+                                </div>
+
+                            </div>
                         </div>
                     </div>
                 </div>

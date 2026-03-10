@@ -13,6 +13,7 @@ import SuppliersSummaryPage from '../features/suppliers/SuppliersSummaryPage'
 import SuppliersFullPage from '../features/suppliers/SuppliersFullPage'
 import SupplierDetailPage from '../features/suppliers/SupplierDetailPage'
 import ReturnsPage from '../features/returns/ReturnsPage'
+import OrdersPage from '../features/orders/OrdersPage'
 import MainLayout from '../layouts/MainLayout'
 import RequireAuth from '../components/RequireAuth'
 import RecoverPage from '../features/auth/RecoverPage'
@@ -50,6 +51,9 @@ function AppRouter() {
 
                 {/* Bajas y Devoluciones */}
                 <Route path="returns" element={<ReturnsPage />} />
+
+                {/* Pedidos */}
+                <Route path="orders" element={<OrdersPage />} />
 
                 <Route path="profile" element={<ProfilePage />} />
             </Route>

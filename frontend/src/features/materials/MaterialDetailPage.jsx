@@ -1,80 +1,76 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
-import {
-    ArrowLeft, ClipboardList, Edit, Save, X, Plus,
-    Package, AlertTriangle, CheckCircle
-} from 'lucide-react'
-import { Card, Button, Input } from '../../components/ui'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Save, ArrowLeft, AlertTriangle, Edit, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthProvider'
-import { mockProducts, FOOD_CATEGORIES } from '../../services/products.mock'
 import { getProductById } from '../../services/products.service'
 import apiFetch from '../../services/api'
 
-// Helper: returns true for non-food (material) products
-const isMaterial = (p) => !FOOD_CATEGORIES.includes(p.categoria)
-
-// Non-food categories for the category dropdown
 const MATERIAL_CATEGORIES = [
     'Utensilios', 'Packaging', 'Limpieza', 'Seguridad',
     'Mobiliario', 'Maquinaria', 'Papelería', 'Otros'
 ]
 
+const UNITS = ['unidad', 'kg', 'L', 'caja', 'm', 'm²']
+
 const EMPTY_MATERIAL = {
     nombre: '',
     descripcion: '',
     sku: '',
+    unidad: 'unidad',
     precio: 0,
     stock: 0,
     stockMinimo: 0,
+    rendimiento: 1.0,
     categoria: 'Utensilios',
     proveedor: '',
-    rendimiento: 1.0,
-    unidad: 'unidad',
     activo: true,
 }
 
 export default function MaterialDetailPage() {
     const { id } = useParams()
-    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const location = useLocation()
     const { user } = useAuth()
 
     const isCreate = !id || id === 'new'
-    const isEditMode = isCreate || searchParams.get('edit') === '1'
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
 
-    const isAdmin = user?.role !== 'USER'
-
-    const [material, setMaterial] = useState(null)
     const [form, setForm] = useState(EMPTY_MATERIAL)
     const [loading, setLoading] = useState(!isCreate)
+    const [notFound, setNotFound] = useState(false)
     const [saving, setSaving] = useState(false)
-    const [error, setError] = useState(null)
-    const [successMsg, setSuccessMsg] = useState(null)
+    const [isEditMode, setIsEditMode] = useState(isCreate)
 
-    // Load material data on mount (for view/edit modes)
     useEffect(() => {
         if (isCreate) {
             const scanned = location?.state?.scannedCode
-            const initial = scanned ? { ...EMPTY_MATERIAL, sku: scanned } : EMPTY_MATERIAL
-            setMaterial(initial)
-            setForm(initial)
+            setForm({ ...EMPTY_MATERIAL, sku: scanned || '' })
             setLoading(false)
             return
         }
 
-        // Fetch from real API
         setLoading(true)
         getProductById(id)
             .then(data => {
                 if (data) {
-                    setMaterial(data)
-                    setForm({ ...data })
+                    setForm({
+                        nombre: data.nombre ?? '',
+                        descripcion: data.descripcion ?? '',
+                        sku: data.sku ?? '',
+                        unidad: data.unidad ?? 'unidad',
+                        precio: data.precio || 0,
+                        stock: data.stock || 0,
+                        stockMinimo: data.stockMinimo || 0,
+                        rendimiento: data.rendimiento || 1.0,
+                        categoria: data.categoria ?? 'Utensilios',
+                        proveedor: data.proveedor ?? '',
+                        activo: data.activo ?? true,
+                    })
                 } else {
-                    setError('Material no encontrado.')
+                    setNotFound(true)
                 }
             })
-            .catch(() => setError('Material no encontrado.'))
+            .catch(() => setNotFound(true))
             .finally(() => setLoading(false))
     }, [id, isCreate])
 
@@ -82,364 +78,254 @@ export default function MaterialDetailPage() {
         setForm(prev => ({ ...prev, [field]: value }))
     }
 
-    const handleSave = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault()
         if (!isAdmin) return
         setSaving(true)
-        setError(null)
         try {
             if (isCreate) {
-                await apiFetch('/products', {
-                    method: 'POST',
-                    body: JSON.stringify(form),
-                })
-                setSuccessMsg('Material creado correctamente.')
-                setTimeout(() => navigate('/inventory'), 1200)
+                await apiFetch('/products', { method: 'POST', body: JSON.stringify(form) })
+                navigate('/inventory')
             } else {
-                await apiFetch(`/products/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(form),
-                })
-                setSuccessMsg('Material guardado correctamente.')
-                setTimeout(() => navigate(`/inventory/${id}`), 1200)
+                await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(form) })
+                setIsEditMode(false)
             }
         } catch (err) {
-            setError(err?.body?.message || err.message || 'Error al guardar.')
+            alert(err?.body?.message || err.message || 'Error al guardar.')
         } finally {
             setSaving(false)
         }
     }
 
-    const handleEdit = () => {
-        navigate(`/inventory/${id}?edit=1`)
-    }
-
-    const handleBack = () => {
-        if (isCreate) {
-            navigate('/inventory')
-        } else if (isEditMode) {
-            navigate(`/inventory/${id}`)
-        } else {
-            navigate('/inventory')
-        }
-    }
-
-    // ── Loading state ──────────────────────────────────────────────────────────
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-cifp-neutral-500 text-sm animate-pulse">Cargando material…</div>
+                <div className="text-gray-500 text-sm animate-pulse">Cargando material…</div>
             </div>
         )
     }
 
-    // ── Not found ──────────────────────────────────────────────────────────────
-    if (!isCreate && !material && !loading) {
+    if (notFound) {
         return (
-            <div className="space-y-4 short:space-y-2">
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <AlertTriangle className="w-10 h-10 text-red-500" />
+                <p className="text-gray-700 font-medium">Material no encontrado.</p>
                 <button
-                    onClick={() => navigate('/inventory')}
-                    className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark transition-colors short:text-sm"
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors"
                 >
-                    <ArrowLeft className="w-5 h-5 short:w-4 short:h-4" />
-                    <span className="font-medium">Volver a Materiales</span>
+                    <ArrowLeft className="w-4 h-4" /> Volver
                 </button>
-                <Card className="p-8 text-center">
-                    <AlertTriangle className="w-12 h-12 text-cifp-red mx-auto mb-3" />
-                    <p className="text-cifp-neutral-700">{error || 'Material no encontrado.'}</p>
-                    <Button className="mt-4" onClick={() => navigate('/inventory')}>Volver al listado</Button>
-                </Card>
             </div>
         )
     }
 
     const isLowStock = form.stock < form.stockMinimo
 
-    // ── Page mode label ────────────────────────────────────────────────────────
-    const pageTitle = isCreate
-        ? 'Nuevo Material'
-        : isEditMode
-            ? `Editar: ${material?.nombre ?? ''}`
-            : material?.nombre ?? 'Detalle de Material'
-
     return (
-        <div className="flex flex-col space-y-4 short:space-y-2 pb-4 short:pb-2">
-
-            {/* ── Header ──────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between flex-shrink-0 short:py-0">
+        <div className="h-full w-full max-w-4xl mx-auto flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-1 md:mb-2">
                 <button
-                    onClick={handleBack}
-                    className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark transition-colors short:text-sm"
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark transition-colors text-sm"
                 >
-                    <ArrowLeft className="w-5 h-5 short:w-4 short:h-4" />
-                    <span className="font-medium">
-                        {isCreate ? 'Volver a Materiales' : isEditMode ? 'Cancelar edición' : 'Volver a Materiales'}
-                    </span>
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="font-medium">Volver atrás</span>
                 </button>
 
-                <div className="flex items-center gap-3 short:gap-2">
-                    <ClipboardList className="w-6 h-6 text-green-600 short:w-5 short:h-5" />
-                    <h1 className="text-2xl font-bold text-cifp-neutral-900 short:text-lg truncate max-w-xs">
-                        {pageTitle}
-                    </h1>
-                </div>
+                <h1 className="text-lg md:text-xl font-bold text-gray-800 uppercase truncate">
+                    {isCreate ? 'Nuevo Material' : form.nombre || 'Detalle Material'}
+                </h1>
 
-                {/* Admin action buttons */}
-                <div className="flex items-center gap-2 short:gap-1">
+                <div className="flex items-center gap-2">
                     {!isCreate && !isEditMode && isAdmin && (
-                        <Button
-                            variant="primary"
-                            onClick={handleEdit}
-                            className="gap-2 short:h-8 short:text-xs short:px-2"
+                        <button
+                            type="button"
+                            onClick={() => setIsEditMode(true)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-cifp-blue text-white rounded-lg text-xs font-semibold hover:bg-cifp-blue-dark transition-colors"
                         >
-                            <Edit className="w-4 h-4 short:hidden" />
-                            Editar
-                        </Button>
+                            <Edit className="w-3 h-3" /> Editar
+                        </button>
                     )}
-
-                    {isEditMode && isAdmin && (
-                        <>
-                            <Button
-                                variant="secondary"
-                                onClick={handleBack}
-                                className="gap-2 short:h-8 short:text-xs short:px-2"
-                            >
-                                <X className="w-4 h-4 short:hidden" />
-                                Cancelar
-                            </Button>
-                            <Button
-                                variant="primary"
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="gap-2 short:h-8 short:text-xs short:px-2"
-                            >
-                                {isCreate
-                                    ? <><Plus className="w-4 h-4 short:hidden" />Crear</>
-                                    : <><Save className="w-4 h-4 short:hidden" />Guardar</>
-                                }
-                            </Button>
-                        </>
+                    {isEditMode && !isCreate && (
+                        <button
+                            type="button"
+                            onClick={() => setIsEditMode(false)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-300 transition-colors"
+                        >
+                            <X className="w-3 h-3" /> Cancelar
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* ── Alerts ──────────────────────────────────────────────────── */}
-            {error && (
-                <div className="flex items-center gap-2 bg-cifp-red/10 text-cifp-red px-4 py-2 rounded-lg text-sm short:text-xs">
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                    {error}
-                </div>
-            )}
+            <form onSubmit={handleSubmit} className="bg-white/50 backdrop-blur-sm p-2 md:p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 md:gap-4 flex-grow overflow-hidden h-full">
 
-            {successMsg && (
-                <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm short:text-xs">
-                    <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                    {successMsg}
-                </div>
-            )}
-
-            {!isAdmin && isEditMode && (
-                <div className="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-4 py-2 rounded-lg text-sm short:text-xs">
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                    Solo los administradores pueden modificar materiales.
-                </div>
-            )}
-
-            {/* ── Form Card ───────────────────────────────────────────────── */}
-            <Card className="p-6 short:p-3">
-                {/* Stock warning banner */}
-                {!isCreate && isLowStock && (
-                    <div className="flex items-center gap-2 mb-4 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg text-sm short:text-xs short:mb-2">
-                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-semibold">Stock crítico:</span>
-                        <span>{form.stock} {form.unidad} (mínimo: {form.stockMinimo})</span>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2">
+                <div className="grid grid-cols-12 gap-x-2 gap-y-1 md:gap-x-4 md:gap-y-4 overflow-y-auto pr-1">
 
                     {/* Nombre */}
-                    <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Nombre del Material
-                        </label>
-                        <Input
+                    <div className="col-span-12 sm:col-span-8">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Nombre del Material</label>
+                        <input
+                            type="text"
                             value={form.nombre}
                             onChange={e => handleChange('nombre', e.target.value)}
+                            disabled={!isEditMode || !isAdmin}
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-medium text-gray-800"
                             placeholder="Ej: Cuchillo Chef 20cm"
-                            disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
-                        />
-                    </div>
-
-                    {/* SKU */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            SKU
-                        </label>
-                        <Input
-                            value={form.sku}
-                            onChange={e => handleChange('sku', e.target.value)}
-                            placeholder="MAT_0001"
-                            disabled={!isEditMode || !isAdmin}
-                            className="font-mono short:h-8 short:text-xs"
-                        />
-                    </div>
-
-                    {/* Categoría */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Categoría
-                        </label>
-                        {isEditMode && isAdmin ? (
-                            <select
-                                value={form.categoria}
-                                onChange={e => handleChange('categoria', e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cifp-blue/20 focus:border-cifp-blue text-sm short:h-8 short:px-2 short:py-1 short:text-xs"
-                            >
-                                {MATERIAL_CATEGORIES.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <Input
-                                value={form.categoria}
-                                disabled
-                                className="short:h-8 short:text-xs"
-                            />
-                        )}
-                    </div>
-
-                    {/* Proveedor */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Proveedor
-                        </label>
-                        <Input
-                            value={form.proveedor}
-                            onChange={e => handleChange('proveedor', e.target.value)}
-                            placeholder="Nombre del proveedor"
-                            disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
                         />
                     </div>
 
                     {/* Unidad */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Unidad de Medida
-                        </label>
-                        <Input
+                    <div className="col-span-6 sm:col-span-4">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Unidad de Medida</label>
+                        <select
                             value={form.unidad}
                             onChange={e => handleChange('unidad', e.target.value)}
-                            placeholder="unidad, kg, L, caja…"
                             disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 font-medium text-gray-800"
+                        >
+                            {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                    </div>
+
+                    {/* SKU */}
+                    <div className="col-span-12 sm:col-span-6">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">SKU</label>
+                        <input
+                            type="text"
+                            value={form.sku}
+                            onChange={e => handleChange('sku', e.target.value)}
+                            disabled={!isEditMode || !isAdmin}
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-mono text-gray-800"
+                            placeholder="MAT-0001"
+                        />
+                    </div>
+
+                    {/* Descripción */}
+                    <div className="col-span-12">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Descripción</label>
+                        <textarea
+                            value={form.descripcion}
+                            onChange={e => handleChange('descripcion', e.target.value)}
+                            disabled={!isEditMode || !isAdmin}
+                            rows={2}
+                            className="w-full px-2 py-1 text-xs md:text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:opacity-75 disabled:cursor-not-allowed text-gray-700 leading-tight"
+                            placeholder="Descripción del material..."
                         />
                     </div>
 
                     {/* Precio */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Precio (€)
-                        </label>
-                        <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.precio}
-                            onChange={e => handleChange('precio', parseFloat(e.target.value) || 0)}
-                            disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
-                        />
+                    <div className="col-span-6 sm:col-span-3">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Precio/Unidad</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={form.precio}
+                                onChange={e => handleChange('precio', parseFloat(e.target.value) || 0)}
+                                disabled={!isEditMode || !isAdmin}
+                                className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-green-50 border-green-100 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 font-medium text-gray-800"
+                            />
+                            <span className="absolute right-2 top-1 md:top-2.5 text-[10px] md:text-xs text-gray-400">€</span>
+                        </div>
                     </div>
 
                     {/* Stock */}
-                    <div>
-                        <label className={`block text-xs font-semibold mb-1 uppercase tracking-wider short:text-[10px] ${isLowStock ? 'text-cifp-red' : 'text-cifp-neutral-700'}`}>
-                            Stock Actual
-                        </label>
-                        <Input
+                    <div className="col-span-6 sm:col-span-3">
+                        <label className={`block text-[10px] md:text-xs uppercase font-bold mb-0 md:mb-1 ${isLowStock ? 'text-red-600' : 'text-gray-800'}`}>Stock</label>
+                        <input
                             type="number"
-                            min="0"
                             value={form.stock}
                             onChange={e => handleChange('stock', parseInt(e.target.value, 10) || 0)}
                             disabled={!isEditMode || !isAdmin}
-                            className={`short:h-8 short:text-xs ${isLowStock ? 'border-cifp-red focus:border-cifp-red' : ''}`}
+                            className={`w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg focus:ring-2 outline-none disabled:opacity-75 font-medium text-gray-800 ${isLowStock ? 'bg-red-50 border-red-200 focus:ring-red-500' : 'bg-gray-50 border-gray-200 focus:ring-gray-500'}`}
                         />
                     </div>
 
                     {/* Stock Mínimo */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Stock Mínimo
-                        </label>
-                        <Input
+                    <div className="col-span-6 sm:col-span-3">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Stock Mínimo</label>
+                        <input
                             type="number"
-                            min="0"
                             value={form.stockMinimo}
                             onChange={e => handleChange('stockMinimo', parseInt(e.target.value, 10) || 0)}
                             disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-gray-50 border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800"
                         />
                     </div>
 
                     {/* Rendimiento */}
-                    <div>
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Rendimiento
-                        </label>
-                        <Input
+                    <div className="col-span-6 sm:col-span-3">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-800 mb-0 md:mb-1">Rendimiento</label>
+                        <input
                             type="number"
-                            min="0"
                             step="0.001"
                             value={form.rendimiento}
                             onChange={e => handleChange('rendimiento', parseFloat(e.target.value) || 0)}
                             disabled={!isEditMode || !isAdmin}
-                            className="short:h-8 short:text-xs"
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800"
+                        />
+                    </div>
+
+                    {/* Categoría */}
+                    <div className="col-span-12 sm:col-span-6">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max mb-0">Categoría</label>
+                        <select
+                            value={form.categoria}
+                            onChange={e => handleChange('categoria', e.target.value)}
+                            disabled={!isEditMode || !isAdmin}
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
+                        >
+                            <option value="">Selecciona</option>
+                            {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+
+                    {/* Proveedor */}
+                    <div className="col-span-12 sm:col-span-5">
+                        <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max mb-0">Proveedor</label>
+                        <input
+                            type="text"
+                            value={form.proveedor}
+                            onChange={e => handleChange('proveedor', e.target.value)}
+                            disabled={!isEditMode || !isAdmin}
+                            className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
+                            placeholder="Nombre del proveedor"
                         />
                     </div>
 
                     {/* Activo */}
-                    <div className="flex items-center gap-3 short:gap-2 pt-2">
+                    <div className="col-span-12 sm:col-span-1 flex items-end pb-1 sm:pb-2">
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={form.activo}
                                 onChange={e => handleChange('activo', e.target.checked)}
                                 disabled={!isEditMode || !isAdmin}
-                                className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded short:w-3 short:h-3"
+                                className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded"
                             />
-                            <span className="text-sm font-medium text-cifp-neutral-700 short:text-xs">Material activo</span>
+                            <span className="text-[10px] md:text-xs font-medium text-gray-700 whitespace-nowrap">Activo</span>
                         </label>
                     </div>
+                </div>
 
-                    {/* Descripción — full width */}
-                    <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold text-cifp-neutral-700 mb-1 uppercase tracking-wider short:text-[10px]">
-                            Descripción
-                        </label>
-                        <textarea
-                            value={form.descripcion}
-                            onChange={e => handleChange('descripcion', e.target.value)}
-                            placeholder="Descripción del material…"
-                            disabled={!isEditMode || !isAdmin}
-                            rows={3}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cifp-blue/20 focus:border-cifp-blue resize-none disabled:bg-cifp-neutral-50 disabled:text-cifp-neutral-600 short:rows-2 short:text-xs short:py-1"
-                        />
+                {/* Footer — save button */}
+                {isEditMode && isAdmin && (
+                    <div className="flex justify-end mt-auto pt-2 border-t border-gray-100">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="flex items-center gap-2 px-4 py-2 bg-cifp-blue text-white rounded-lg text-sm font-semibold hover:bg-cifp-blue-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <Save className="w-4 h-4" />
+                            {saving ? 'Guardando...' : isCreate ? 'Crear Material' : 'Guardar Cambios'}
+                        </button>
                     </div>
-                </div>
-            </Card>
-
-            {/* ── Info footer (view mode only) ─────────────────────────── */}
-            {!isCreate && !isEditMode && (
-                <div className="flex items-center gap-2 text-cifp-neutral-500 text-xs short:text-[10px] px-1">
-                    <Package className="w-3 h-3 flex-shrink-0" />
-                    <span>
-                        ID: <code className="font-mono">{id}</code>
-                        {!isAdmin && ' · Vista de solo lectura'}
-                    </span>
-                </div>
-            )}
+                )}
+            </form>
         </div>
     )
 }

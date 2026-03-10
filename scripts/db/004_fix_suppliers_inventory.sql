@@ -1,4 +1,12 @@
+-- scripts/db/004_fix_suppliers_inventory.sql
+-- Las columnas y tablas aquí referenciadas ya no son necesarias con el nuevo esquema.
+-- Este script se mantiene como no-op.
+
 BEGIN;
+
+-- (no-op)
+
+/*
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS nombre varchar(255);
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contacto varchar(255);
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email varchar(255);
@@ -28,4 +36,6 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now()
 );
+*/
+
 COMMIT;

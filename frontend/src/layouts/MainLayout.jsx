@@ -28,18 +28,23 @@ function MainLayout() {
       {/* overlay to reduce prominence of background for dashboard */}
       <div className="absolute inset-0 bg-white/70 dark:bg-black/40 pointer-events-none"></div>
 
-      <div className="relative z-10 w-full">
+      <div className="relative z-10 w-full flex flex-col min-h-screen">
         {/* Global barcode listener (invisible) */}
         <BarcodeListener />
         <Header showMenuButton={isFocusMode} onMenuClick={() => setIsMobileMenuOpen(true)} />
 
-        <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full overflow-y-auto pb-28">
+        <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full overflow-y-auto pb-24">
           <Outlet />
-          {/* Conditionally render Navbar: hide in Focus Mode */}
-          {!isFocusMode && <Navbar />}
         </main>
 
         <Footer />
+
+        {/* Sticky bottom nav — hidden in Focus Mode */}
+        {!isFocusMode && (
+          <div className="sticky bottom-0 z-20 w-full max-w-screen-xl mx-auto px-2 sm:px-4 pb-2">
+            <Navbar />
+          </div>
+        )}
       </div>
 
       {/* Mobile Menu for Focus Mode */}

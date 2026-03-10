@@ -11,54 +11,47 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { OrderItem } from './order-item.entity';
-import { DeliveryNote } from '../../delivery-notes/entities/delivery-note.entity';
 
 export enum OrderStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  APPROVED = 'APPROVED',
+  MERGED = 'MERGED',
+  ORDERED = 'ORDERED',
+  RECEIVED = 'RECEIVED',
   CANCELLED = 'CANCELLED',
 }
 
 @Entity('orders')
-@Index(['estado'])
 @Index(['createdAt'])
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true, name: 'numero_orden' })
-  numeroOrden: string;
+  @Column({ type: 'uuid', name: 'created_by' })
+  createdBy: string;
 
-  @Column({ type: 'uuid', name: 'usuario_id' })
-  usuarioId: string;
+  @ManyToOne(() => User, { onDelete: 'RESTRICT', eager: false })
+  @JoinColumn({ name: 'created_by' })
+  creator: User;
 
-  @ManyToOne(() => User, (user) => user.orders, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'usuario_id' })
-  usuario: User;
+  @Column({ type: 'uuid', name: 'class_id', nullable: true })
+  classId: string | null;
 
-  @Column({
-    type: 'enum',
-    enum: OrderStatus,
-    default: OrderStatus.PENDING,
-  })
-  estado: OrderStatus;
+  @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
+  supplierId: string | null;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'monto_total' })
-  montoTotal: number;
+  @Column({ type: 'varchar', length: 20, name: 'status', default: 'DRAFT' })
+  status: OrderStatus;
 
-  @Column({ type: 'text', nullable: true })
-  observaciones: string | null;
+  @Column({ type: 'date', name: 'week_start' })
+  weekStart: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true, name: 'domicilio_entrega' })
-  domicilioEntrega: string | null;
+  @Column({ type: 'uuid', name: 'merged_into_order_id', nullable: true })
+  mergedIntoOrderId: string | null;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
+  @OneToMany(() => OrderItem, (item) => item.order, { cascade: false })
   items: OrderItem[];
-
-  @OneToMany(() => DeliveryNote, (note) => note.pedido)
-  deliveryNotes: DeliveryNote[];
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;

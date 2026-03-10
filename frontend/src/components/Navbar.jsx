@@ -1,47 +1,108 @@
-import { Users, Box, ClipboardList, Truck, Heart, Repeat, ChevronLeft, FileText, Archive } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Box, ClipboardList, Truck, Heart, Repeat, FileText, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 
-const items = [
-  { to: '/products', label: 'Ingredientes', icon: Box, bg: 'bg-yellow-50', color: 'text-yellow-600' },
-  { to: '/inventory', label: 'Materiales', icon: ClipboardList, bg: 'bg-green-50', color: 'text-green-600' },
-  { to: '/recipes', label: 'Recetas', icon: FileText, bg: 'bg-amber-50', color: 'text-amber-600' },
-  { to: '/returns', label: 'Bajas/Devoluciones', icon: Archive, bg: 'bg-pink-50', color: 'text-pink-600' },
-  { to: '/orders', label: 'Pedidos', icon: Truck, bg: 'bg-blue-50', color: 'text-blue-600' },
-  { to: '/delivery-notes', label: 'Albaranes', icon: Repeat, bg: 'bg-red-50', color: 'text-red-600' },
-  { to: '/providers', label: 'Proveedores', icon: Heart, bg: 'bg-indigo-50', color: 'text-indigo-600' },
+const ITEMS = [
+  { to: '/products',       label: 'Ingredientes',  icon: Box,           bg: 'bg-yellow-50', color: 'text-yellow-600', ring: 'ring-yellow-200', desc: 'Catálogo de ingredientes: altas, bajas, precios y rendimientos por unidad de medida.' },
+  { to: '/inventory',      label: 'Materiales',    icon: ClipboardList, bg: 'bg-green-50',  color: 'text-green-600',  ring: 'ring-green-200',  desc: 'Gestión de materiales y equipamiento: stock actual, entradas y salidas de almacén.' },
+  { to: '/recipes',        label: 'Recetas',       icon: FileText,      bg: 'bg-amber-50',  color: 'text-amber-600',  ring: 'ring-amber-200',  desc: 'Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos.' },
+  { to: '/returns',        label: 'Bajas / Dev.',  icon: Archive,       bg: 'bg-pink-50',   color: 'text-pink-600',   ring: 'ring-pink-200',   desc: 'Registro de bajas por caducidad o rotura y devoluciones a proveedores.' },
+  { to: '/orders',         label: 'Pedidos',       icon: Truck,         bg: 'bg-blue-50',   color: 'text-blue-600',   ring: 'ring-blue-200',   desc: 'Solicitudes de pedido por clase, revisión docente y consolidado semanal del economato.' },
+  { to: '/delivery-notes', label: 'Albaranes',     icon: Repeat,        bg: 'bg-red-50',    color: 'text-red-600',    ring: 'ring-red-200',    desc: 'Registro y validación de albaranes de entrega recibidos de los proveedores.' },
+  { to: '/providers',      label: 'Proveedores',   icon: Heart,         bg: 'bg-indigo-50', color: 'text-indigo-600', ring: 'ring-indigo-200', desc: 'Directorio de proveedores: contacto, condiciones comerciales y catálogo asociado.' },
 ]
 
 export default function Navbar() {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const [tip, setTip] = useState(null) // { x, y, label, desc, color }
+
+  const canGoBack     = location.key !== 'default'
+  const isOnDashboard = location.pathname === '/dashboard'
+  const isActive = (to) => location.pathname === to || location.pathname.startsWith(to + '/')
+
+  function show(e, label, desc, color) {
+    const r = e.currentTarget.getBoundingClientRect()
+    setTip({ x: r.left + r.width / 2, y: r.top, label, desc, color })
+  }
+  const hide = () => setTip(null)
 
   return (
-    <nav className="w-full px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
-      <div className="flex items-start w-full max-w-4xl gap-4">
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 place-items-center w-full">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-2xl shadow-sm hover:shadow-md w-full max-w-[220px] min-h-[150px]"
-            aria-label="Volver atrás"
+    <>
+      <nav className="w-full px-2 sm:px-4 py-3">
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-200/70 rounded-2xl shadow-md px-2 py-1.5 flex items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+
+          {/* Dashboard button — always visible */}
+          <Link
+            to="/dashboard"
+            onMouseEnter={e => show(e, 'Inicio', 'Ir al panel principal', 'text-gray-200')}
+            onMouseLeave={hide}
+            aria-label="Inicio"
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl min-w-[64px] transition-all duration-150 shrink-0 active:scale-95 ${
+              isOnDashboard
+                ? 'bg-gray-100 text-cifp-neutral-800 ring-1 ring-gray-200 shadow-sm font-semibold'
+                : 'text-cifp-neutral-500 hover:bg-cifp-neutral-100 hover:text-cifp-neutral-800'
+            }`}
           >
-            <div className="p-3 rounded-lg bg-cifp-neutral-100 flex items-center justify-center w-12 h-12">
-              <ChevronLeft className="w-7 h-7 text-cifp-neutral-700" />
-            </div>
-            <div className="text-sm sm:text-base font-medium text-cifp-neutral-700 text-center leading-tight break-words">Volver atrás</div>
-          </button>
-          {items.map((it) => {
-            const Icon = it.icon
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-[11px] font-medium leading-tight">Inicio</span>
+          </Link>
+
+          {/* Back button — only when there's history */}
+          {canGoBack && !isOnDashboard && (
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              onMouseEnter={e => show(e, 'Volver', 'Volver a la página anterior', 'text-gray-200')}
+              onMouseLeave={hide}
+              aria-label="Volver atrás"
+              className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl min-w-[64px] transition-all duration-150 shrink-0 text-cifp-neutral-500 hover:bg-cifp-neutral-100 hover:text-cifp-neutral-800 active:scale-95"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-[11px] font-medium leading-tight">Volver</span>
+            </button>
+          )}
+
+          {/* Divider */}
+          <div className="w-px h-7 bg-gray-200 mx-1 shrink-0" />
+
+          {/* Navigation items */}
+          {ITEMS.map(({ to, label, icon: Icon, bg, color, ring, desc }) => {
+            const active = isActive(to)
             return (
-              <Link key={it.to} to={it.to} className="flex flex-col items-center justify-center gap-3 bg-white p-6 rounded-2xl shadow-sm hover:shadow-md w-full max-w-[220px] min-h-[150px]">
-                <div className={`p-3 rounded-lg ${it.bg} flex items-center justify-center w-12 h-12`}>
-                  <Icon className={`w-7 h-7 ${it.color}`} />
-                </div>
-                <div className="text-sm sm:text-base font-medium text-cifp-neutral-700 text-center leading-tight break-words">{it.label}</div>
+              <Link
+                key={to}
+                to={to}
+                onMouseEnter={e => show(e, label, desc, color)}
+                onMouseLeave={hide}
+                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl min-w-[72px] transition-all duration-150 shrink-0 active:scale-95 ${
+                  active
+                    ? `${bg} ${color} ring-1 ${ring} shadow-sm font-semibold`
+                    : 'text-cifp-neutral-500 hover:bg-cifp-neutral-100 hover:text-cifp-neutral-800'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
               </Link>
             )
           })}
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Fixed tooltip — outside any overflow/stacking context so it's never clipped */}
+      {tip && (
+        <div
+          className="pointer-events-none fixed z-[9999] -translate-x-1/2 -translate-y-full"
+          style={{ left: tip.x, top: tip.y - 10 }}
+        >
+          <div className="bg-gray-900 text-white text-xs rounded-xl px-3.5 py-3 leading-relaxed shadow-2xl w-52">
+            <p className={`font-bold mb-1 ${tip.color}`}>{tip.label}</p>
+            <p className="text-gray-300">{tip.desc}</p>
+          </div>
+          {/* Arrow pointing down */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-gray-900" />
+        </div>
+      )}
+    </>
   )
 }

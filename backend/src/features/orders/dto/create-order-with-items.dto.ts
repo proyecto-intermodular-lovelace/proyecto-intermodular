@@ -1,54 +1,45 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsPositive, IsString, Matches, ValidateNested } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsDateString, IsUUID, ValidateNested, IsNumber, IsPositive } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 class OrderItemInput {
   @ApiProperty({ example: '987e6543-e89b-12d3-a456-426614174000' })
-  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
-  productoId: string;
+  @IsUUID()
+  productId: string;
 
-  @ApiProperty({ example: 5 })
+  @ApiProperty({ example: 2.5 })
   @IsNumber()
   @IsPositive()
-  cantidad: number;
+  qtyRequested: number;
 
-  @ApiProperty({ example: 29.99 })
-  @IsNumber()
-  @IsPositive()
-  precioUnitario: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class CreateOrderWithItemsDto {
-  @ApiProperty({ example: 'ORD-0001', required: false })
+  @ApiProperty({ example: '2025-01-06', description: 'Fecha de inicio de la semana (lunes)' })
+  @IsDateString()
+  weekStart: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', required: false })
   @IsOptional()
-  @IsString()
-  numeroOrden?: string;
+  @IsUUID()
+  classId?: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
-  usuarioId: string;
-
-  @ApiProperty({ example: 149.95 })
-  @IsNumber()
-  @IsPositive()
-  montoTotal: number;
-
-  @ApiProperty({ example: 'Pedido de prueba', required: false })
+  @ApiProperty({ example: 'Pedido semanal de repostería', required: false })
   @IsString()
   @IsOptional()
-  observaciones?: string;
-
-  @ApiProperty({ example: 'Calle 123', required: false })
-  @IsString()
-  @IsOptional()
-  domicilioEntrega?: string;
+  notes?: string;
 
   @ApiProperty({ 
     type: [OrderItemInput],
     description: 'Items del pedido'
   })
   @IsArray()
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => OrderItemInput)
-  items: OrderItemInput[];
+  items?: OrderItemInput[];
 }
