@@ -15,9 +15,9 @@ import { CustomLogger } from './common/logger/custom.logger';
 
 @Module({
   imports: [
-      ConfigModule.forRoot({
+    ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',
+      envFilePath: '.env',
     }),
 
     TypeOrmModule.forRootAsync({
