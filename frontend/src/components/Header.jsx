@@ -23,7 +23,7 @@ export default function Header({ showMenuButton = false, onMenuClick }) {
     const isDark = root.classList.toggle('dark')
     try {
       localStorage.setItem('theme', isDark ? 'dark' : 'light')
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return (
@@ -40,7 +40,13 @@ export default function Header({ showMenuButton = false, onMenuClick }) {
               <Menu className="w-6 h-6 text-white" />
             </button>
           )}
-          <img src={logoImg} alt="CIFP" className="h-14 w-14 object-contain rounded-sm" />
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="focus:outline-none"
+            aria-label="Ir al dashboard"
+          >
+            <img src={logoImg} alt="CIFP" className="h-14 w-14.5 object-contain rounded-sm cursor-pointer" />
+          </button>
           <div>
             <div className="text-sm text-white/90">Gobierno de Canarias</div>
             <div className="text-lg font-semibold text-white">SmartEconomato</div>
