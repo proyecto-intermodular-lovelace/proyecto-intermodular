@@ -23,7 +23,15 @@ La aplicación está optimizada para su uso en **pantallas táctiles** (tablet o
 3. **Pulsa** **"Iniciar Sesión"**.
 4. Accederás al **Panel de Control** principal, desde donde puedes navegar a todos los módulos.
 
-`[Insertar Captura de Pantalla — Panel de Control del Jefe de Economato con todos los módulos visibles]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/jefe_dashboard_principal_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/jefe_dashboard_principal_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/jefe_dashboard_principal_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 ### Cerrar Sesión
 
@@ -43,7 +51,15 @@ El módulo de **Recepción** te permite registrar la entrada de nueva mercancía
 2. Verás la pantalla de Recepción con un formulario en blanco.
 3. **Pulsa** **"+ Nueva Recepción"**.
 
-`[Insertar Captura de Pantalla — Pantalla de inicio del módulo Recepción]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/jefe_recepcion_inicio_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/jefe_recepcion_inicio_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/jefe_recepcion_inicio_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 4. Rellena los datos de la cabecera del albarán:
 
@@ -54,7 +70,7 @@ El módulo de **Recepción** te permite registrar la entrada de nueva mercancía
 | **Fecha de Recepción** | Por defecto es la fecha actual. Cámbiala si el albarán es de un día anterior. |
 | **Notas** | Opcional. Útil para registrar incidencias (ej: "Caja con golpe, producto en buen estado"). |
 
-`[Insertar Captura de Pantalla — Formulario de cabecera de recepción]`
+![Vista de la interfaz](../../assets/images/jefe_recepcion_cabecera.JPG)
 
 5. Añade los productos recibidos línea a línea:
    - **Pulsa** **"+ Añadir Producto"**.
@@ -64,7 +80,7 @@ El módulo de **Recepción** te permite registrar la entrada de nueva mercancía
    - Comprueba la **fecha de caducidad** si el producto es perecedero e introdúcela en el campo correspondiente.
    - Repite por cada artículo del albarán.
 
-`[Insertar Captura de Pantalla — Línea de producto en formulario de recepción]`
+![Vista de la interfaz](../../assets/images/jefe_recepcion_linea.JPG)
 
 6. Revisa el resumen de líneas y el total.
 7. **Pulsa** **"Confirmar Recepción"**.
@@ -143,9 +159,8 @@ El módulo de **Bajas** permite registrar la retirada de productos del inventari
 ### 3.1 Registrar una baja de producto
 
 1. En el menú lateral, **pulsa** **"Bajas de Inventario"**.
-2. **Pulsa** **"+ Nueva Baja"**.
 
-`[Insertar Captura de Pantalla — Pantalla de Nueva Baja vacía]`
+![Vista de la interfaz](../../assets/images/jefe_bajas.JPG)
 
 3. Rellena el formulario:
 
@@ -157,29 +172,12 @@ El módulo de **Bajas** permite registrar la retirada de productos del inventari
 | **Fecha** | Por defecto es hoy. Modifícala si la incidencia ocurrió otro día. |
 | **Observaciones** | Descripción adicional obligatoria para motivos de "Rotura" o "Pérdida". |
 
-`[Insertar Captura de Pantalla — Formulario de baja con el campo Motivo desplegado]`
-
 4. **Pulsa** **"Registrar Baja"**.
 
 > ✅ La cantidad se descontará del stock inmediatamente. El registro de bajas queda guardado para auditorías.
 
 ---
 
-### 3.2 Registro de bajas masivas (fin de temporada / limpieza de almacén)
-
-Para dar de baja varios productos a la vez tras una inspección o limpieza de almacén:
-
-1. En **"Bajas de Inventario"**, **pulsa** **"Baja Masiva"**.
-2. Se mostrará el **listado completo del inventario**. **Pulsa** el checkbox ☑ de cada producto que quieras dar de baja.
-3. Introduce la cantidad a retirar para cada producto seleccionado.
-4. Selecciona un **motivo común** para todos (o indivualiza si es necesario pulsando el ícono de ajuste en cada línea).
-5. **Pulsa** **"Confirmar Baja Masiva"** y confirma la operación en el diálogo de verificación.
-
-`[Insertar Captura de Pantalla — Pantalla de Baja Masiva con varios productos seleccionados]`
-
-> ⚠️ **Esta acción es irreversible.** Comprueba bien las cantidades antes de confirmar.
-
----
 
 ## Módulo 4 — INVENTARIO PERMANENTE
 
@@ -191,7 +189,15 @@ El **Inventario Permanente** es la fotografía en tiempo real de todo el stock d
 2. Verás dos pestañas: **Ingredientes** y **Materiales**. **Pulsa** la que necesites.
 3. La tabla muestra: **Nombre del producto**, **Stock actual**, **Unidad**, **Stock mínimo** y **Valor de inventario** (precio × cantidad).
 
-`[Insertar Captura de Pantalla — Vista del inventario permanente con columnas de stock]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/jefe_inventario_permanente_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/jefe_inventario_permanente_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/jefe_inventario_permanente_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 4. Los productos con stock por debajo del mínimo configurado aparecerán resaltados en **naranja** como alerta de reposición.
 
@@ -202,34 +208,10 @@ El **Inventario Permanente** es la fotografía en tiempo real de todo el stock d
 - **Pulsa** la barra de búsqueda y escribe el nombre o parte del nombre del producto.
 - Usa los filtros de la barra superior para acotar por **categoría** (lácteos, carnes, verduras, etc.) o por **estado de stock** (normal, bajo, agotado).
 
-`[Insertar Captura de Pantalla — Filtros activos en el inventario]`
+![Vista de la interfaz](../../assets/images/jefe_inventario_filtros_tablet.JPG)
 
 ---
 
-### 4.3 Realizar un Inventario / Auditoría de stock
-
-La auditoría te permite cotejar el stock físico real con los datos del sistema y corregir desviaciones.
-
-> 💡 **Recomendación:** Realiza una auditoría parcial semanal por categorías y una auditoría completa al final de cada trimestre.
-
-1. En **"Inventario"**, **pulsa** el botón **"Iniciar Inventario"** (icono de portapapeles).
-2. Selecciona si quieres un **inventario completo** o **filtrado por categorías**.
-3. **Pulsa** **"Comenzar"**. El sistema generará una hoja de inventario con todos los productos y su stock teórico.
-
-`[Insertar Captura de Pantalla — Hoja de inventario con columnas de stock teórico y contado]`
-
-4. Desplázate por la lista y, para cada producto:
-   - Cuenta físicamente las unidades en el almacén.
-   - **Pulsa** el campo **"Contado"** y escribe la cantidad real que has contado.
-5. Cuando hayas completado todos los productos, **pulsa** **"Finalizar y Aplicar Ajustes"**.
-6. El sistema mostrará un **resumen de desviaciones** (diferencias entre stock teórico y contado). Revísalas.
-7. **Pulsa** **"Confirmar Ajustes"** para que los valores reales sustituyan a los teóricos en el inventario.
-
-`[Insertar Captura de Pantalla — Resumen de desviaciones antes de confirmar ajuste]`
-
-> ✅ Todos los ajustes quedan registrados con tu usuario, fecha y hora para trazabilidad.
-
----
 
 ### 4.4 Exportar el inventario (para informes)
 
@@ -318,7 +300,7 @@ Sí. En el módulo de Inventario, **pulsa** **"Gestión de Catálogo"** → **"+
 1. Es normal si el catálogo es muy amplio. Usa los **filtros de categoría** para reducir la carga.
 2. Si la lentitud es persistente, informa al administrador de IT para que revise el rendimiento del servidor.
 
-`[Insertar Captura de Pantalla — Mensaje de error de red / pantalla de error de conexión]`
+
 
 ---
 

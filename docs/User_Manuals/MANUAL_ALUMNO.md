@@ -30,7 +30,15 @@ El **Smarteconomato** es la aplicación digital de gestión del economato de tu 
 4. **Pulsa** el campo **"Contraseña"** e introduce tu contraseña.
 5. **Pulsa** el botón grande **"Iniciar Sesión"**.
 
-`[Insertar Captura de Pantalla — Pantalla de inicio de sesión]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/alumno_login_inicio_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/alumno_login_inicio_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/alumno_login_inicio_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 > ⚠️ **Importante:** Si ves el mensaje "Credenciales incorrectas", comprueba que no tienes el BLOQ MAYÚS activado e inténtalo de nuevo. Si el problema persiste, avisa a tu profesor.
 
@@ -49,7 +57,15 @@ Desde el panel principal podrás ver qué productos hay disponibles en el econom
 1. En el menú lateral, **pulsa** la sección **"Inventario"**.
 2. Verás una lista de **ingredientes** y **materiales** con sus cantidades actuales.
 
-`[Insertar Captura de Pantalla — Vista general del inventario]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/alumno_inventario_general_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/alumno_inventario_general_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/alumno_inventario_general_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 ### 2.2 Buscar un artículo concreto
 
@@ -57,7 +73,7 @@ Desde el panel principal podrás ver qué productos hay disponibles en el econom
 2. Escribe el nombre del producto que buscas (por ejemplo: "harina", "aceite").
 3. La lista se filtrará automáticamente mostrando los artículos que coincidan.
 
-`[Insertar Captura de Pantalla — Barra de búsqueda con resultado filtrado]`
+![Vista de la interfaz](../../assets/images/alumno_inventario_busqueda.JPG)
 
 ### 2.3 Ver el detalle de un producto
 
@@ -65,28 +81,6 @@ Desde el panel principal podrás ver qué productos hay disponibles en el econom
 
 ---
 
-## Módulo 3 — Mis Tareas y Pedidos del Día
-
-Tu profesor puede asignar pedidos de productos para las prácticas de tu clase. Aquí es donde los encontrarás.
-
-### 3.1 Consultar los pedidos asignados a tu clase
-
-1. En el menú lateral, **pulsa** **"Herramientas"** y luego **"Pedidos"**.
-2. Verás la lista de pedidos activos. Los pedidos de tu clase aparecerán con el nombre o código de tu grupo.
-3. **Pulsa** sobre un pedido para ver el detalle: qué productos se han solicitado, las cantidades y el estado (pendiente, aprobado, entregado).
-
-`[Insertar Captura de Pantalla — Lista de pedidos con estado]`
-
-### 3.2 Entender los estados de un pedido
-
-| Estado | Significado |
-|---|---|
-| 🟡 **Pendiente** | El pedido ha sido creado pero aún no ha sido revisado. |
-| 🟢 **Aprobado** | El Jefe de Economato ha confirmado el pedido. |
-| 📦 **Entregado** | Los materiales ya han sido distribuidos a tu clase. |
-| 🔴 **Rechazado** | El pedido no pudo ser atendido. Consulta con tu profesor. |
-
----
 
 ## Preguntas frecuentes (FAQ)
 
@@ -145,7 +139,7 @@ Avisa a tu profesor o al responsable del aula. No intentes desbloquearla por tu 
 
 - Dirígete a tu profesor. Solo él o el administrador de IT pueden solicitar el restablecimiento de credenciales.
 
-`[Insertar Captura de Pantalla — Mensaje de error de red / pantalla de error de conexión]`
+
 
 ---
 
