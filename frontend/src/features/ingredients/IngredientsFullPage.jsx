@@ -24,6 +24,18 @@ export default function IngredientsFullPage() {
     const [editProduct, setEditProduct] = useState(null)
     const [detailSaving, setDetailSaving] = useState(false)
 
+    // Dynamic lists from API
+    const [apiCategories, setApiCategories] = useState([])
+    const [apiSuppliers, setApiSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=INGREDIENT').then(res => setApiCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setApiSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
+
     // Get unique categories and providers from loaded products
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria || ''))].filter(Boolean).sort(), [products])
     const suppliers = useMemo(() => [...new Set(products.map(p => p.proveedor || ''))].filter(Boolean).sort(), [products])
@@ -166,20 +178,34 @@ export default function IngredientsFullPage() {
         if (!updated) return
         setDetailSaving(true)
         try {
-            // Determine create vs update by presence of id and whether it looks like a client-only id
+            const payload = {
+                name: updated.nombre,
+                code: updated.sku || updated.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'INGREDIENT',
+                unitType: updated.unidad,
+                unitPrice: updated.precio,
+                yieldPercent: updated.rendimiento,
+                relation: (updated.rendimiento || 0) / 100,
+                categoryId: updated.categoryId || undefined,
+                supplierId: updated.supplierId || null,
+                isActive: updated.activo !== false,
+            }
             const isExisting = updated.id && products.some(p => p.id === updated.id && !String(p.id).startsWith('id_'))
             if (isExisting) {
                 const res = await apiFetch(`/products/${updated.id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(updated),
+                    body: JSON.stringify(payload),
                 })
-                setProducts(products.map(p => p.id === res.id ? res : p))
+                // Reload from backend to get eagerly-loaded relations
+                const refreshed = await getIngredients(2000)
+                setProducts(refreshed)
             } else {
-                const res = await apiFetch('/products', {
+                await apiFetch('/products', {
                     method: 'POST',
-                    body: JSON.stringify(updated),
+                    body: JSON.stringify(payload),
                 })
-                setProducts([res, ...products])
+                const refreshed = await getIngredients(2000)
+                setProducts(refreshed)
             }
             handleCloseEdit()
         } catch (err) {
@@ -356,25 +382,27 @@ export default function IngredientsFullPage() {
                                 {/* Categoría */}
                                 <div className="col-span-12 sm:col-span-6">
                                     <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
-                                    <input
-                                        type="text"
-                                        value={editProduct.categoria || ''}
-                                        onChange={e => setEditProduct({ ...editProduct, categoria: e.target.value })}
+                                    <select
+                                        value={editProduct.categoryId || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, categoryId: e.target.value })}
                                         className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none bg-white font-medium text-gray-800"
-                                        placeholder="Ej: Lácteos, Carnes, Verduras..."
-                                    />
+                                    >
+                                        <option value="">Selecciona</option>
+                                        {apiCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Proveedor */}
                                 <div className="col-span-12 sm:col-span-5">
                                     <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
-                                    <input
-                                        type="text"
-                                        value={editProduct.proveedor || ''}
-                                        onChange={e => setEditProduct({ ...editProduct, proveedor: e.target.value })}
+                                    <select
+                                        value={editProduct.supplierId || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, supplierId: e.target.value })}
                                         className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white font-medium text-gray-800"
-                                        placeholder="Nombre del proveedor"
-                                    />
+                                    >
+                                        <option value="">Selecciona</option>
+                                        {apiSuppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Activo */}

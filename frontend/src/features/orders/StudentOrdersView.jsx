@@ -3,9 +3,18 @@ import { Plus, ChevronDown, ChevronUp, Send, X, Search, Trash2 } from 'lucide-re
 import { getOrders, createOrder, submitOrder, cancelOrder, getProducts } from '../../services/orders.service'
 import { StatusBadge, getMonday, formatDate } from './orderUtils.jsx'
 
+const TABS = [
+  { key: 'DRAFT',     label: 'Borradores' },
+  { key: 'SUBMITTED', label: 'Enviados' },
+  { key: 'APPROVED',  label: 'Aprobados' },
+  { key: 'CANCELLED', label: 'Cancelados' },
+  { key: null,        label: 'Todos' },
+]
+
 export default function StudentOrdersView() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('DRAFT')
   const [expandedId, setExpandedId] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [actionLoading, setActionLoading] = useState(null) // orderId or 'create'
@@ -20,6 +29,14 @@ export default function StudentOrdersView() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const filtered = activeTab
+    ? orders.filter(o => o.status === activeTab)
+    : orders
+
+  function badgeCount(tabKey) {
+    return orders.filter(o => o.status === tabKey).length
+  }
 
   async function handleSubmit(orderId) {
     setActionLoading(orderId)
@@ -74,16 +91,47 @@ export default function StudentOrdersView() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-6 w-fit flex-wrap">
+        {TABS.map(tab => (
+          <button
+            key={tab.key ?? 'all'}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+            {tab.key !== null && (
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                activeTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {badgeCount(tab.key)}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-12 text-gray-400">Cargando pedidos...</div>
-      ) : orders.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <p className="text-lg">No tienes pedidos todavía</p>
-          <p className="text-sm mt-1">Crea una solicitud para pedir materiales a tu profesor</p>
+          {activeTab === 'DRAFT'
+            ? <span>No tienes borradores.{' '}
+                <button className="text-blue-600 underline" onClick={() => setShowCreateModal(true)}>
+                  Crear uno ahora
+                </button>
+              </span>
+            : activeTab
+            ? 'No hay pedidos en esta categoría'
+            : 'No tienes pedidos todavía'}
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map(order => (
+          {filtered.map(order => (
             <OrderCard
               key={order.id}
               order={order}

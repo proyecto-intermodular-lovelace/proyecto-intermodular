@@ -33,6 +33,18 @@ export default function MaterialsFullPage() {
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
+    // Dynamic lists from API
+    const [apiCategories, setApiCategories] = useState([])
+    const [apiSuppliers, setApiSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=MATERIAL').then(res => setApiCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setApiSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
+
     // Derived filter options
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria || ''))].filter(Boolean).sort(), [products])
     const suppliers = useMemo(() => [...new Set(products.map(p => p.proveedor || ''))].filter(Boolean).sort(), [products])
@@ -129,7 +141,6 @@ export default function MaterialsFullPage() {
         URL.revokeObjectURL(url)
     }
 
-    const MATERIAL_CATEGORIES = ['Utensilios', 'Packaging', 'Limpieza', 'Seguridad', 'Mobiliario', 'Maquinaria', 'Papelería', 'Otros']
     const UNITS = ['unidad', 'kg', 'L', 'caja', 'm', 'm²']
 
     const openDetailView = (product) => {
@@ -145,7 +156,7 @@ export default function MaterialsFullPage() {
     }
 
     const openDetailCreate = () => {
-        const empty = { nombre: '', sku: '', categoria: 'Utensilios', proveedor: '', stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad', rendimiento: 1.0, descripcion: '', activo: true }
+        const empty = { nombre: '', sku: '', categoryId: '', supplierId: '', stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad', rendimiento: 1.0, descripcion: '', activo: true }
         setDetailProduct(empty)
         setDetailForm(empty)
         setDetailMode('edit')
@@ -165,14 +176,26 @@ export default function MaterialsFullPage() {
         if (!detailForm) return
         setDetailSaving(true)
         try {
+            const payload = {
+                name: detailForm.nombre,
+                code: detailForm.sku || detailForm.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'MATERIAL',
+                unitType: detailForm.unidad,
+                unitPrice: detailForm.precio,
+                yieldPercent: detailForm.rendimiento,
+                relation: (detailForm.rendimiento || 0) / 100,
+                categoryId: detailForm.categoryId || undefined,
+                supplierId: detailForm.supplierId || null,
+                isActive: detailForm.activo !== false,
+            }
             const isExisting = detailForm.id && products.some(p => p.id === detailForm.id)
             if (isExisting) {
-                const res = await apiFetch(`/products/${detailForm.id}`, { method: 'PUT', body: JSON.stringify(detailForm) })
-                setProducts(products.map(p => p.id === res.id ? res : p))
+                await apiFetch(`/products/${detailForm.id}`, { method: 'PUT', body: JSON.stringify(payload) })
             } else {
-                const res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(detailForm) })
-                setProducts([res, ...products])
+                await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) })
             }
+            const refreshed = await getMaterials(2000)
+            setProducts(refreshed)
             closeDetail()
         } catch (err) {
             alert(`Error: ${err?.body?.message || err.message}`)
@@ -323,19 +346,21 @@ export default function MaterialsFullPage() {
                                 {/* Categoría */}
                                 <div className="col-span-12 sm:col-span-6">
                                     <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
-                                    <select value={detailForm.categoria} onChange={e => handleDetailChange('categoria', e.target.value)} disabled={detailMode === 'view'}
+                                    <select value={detailForm.categoryId || ''} onChange={e => handleDetailChange('categoryId', e.target.value)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800">
                                         <option value="">Selecciona</option>
-                                        {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {apiCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
 
                                 {/* Proveedor */}
                                 <div className="col-span-12 sm:col-span-5">
                                     <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
-                                    <input type="text" value={detailForm.proveedor} onChange={e => handleDetailChange('proveedor', e.target.value)} disabled={detailMode === 'view'}
-                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
-                                        placeholder="Nombre del proveedor" />
+                                    <select value={detailForm.supplierId || ''} onChange={e => handleDetailChange('supplierId', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800">
+                                        <option value="">Selecciona</option>
+                                        {apiSuppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Activo */}

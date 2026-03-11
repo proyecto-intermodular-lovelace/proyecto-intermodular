@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthProvider'
 import {
-  Box, ClipboardList, Truck, Heart, Repeat, FileText, Archive,
+  Box, ClipboardList, Truck, Heart, Repeat, FileText, Archive, Tags,
 } from 'lucide-react'
 
 // ─── Nav items with tooltip descriptions ─────────────────────────────────────
@@ -16,6 +16,11 @@ const NAV_ITEMS = [
     to: '/inventory',      label: 'Materiales',    icon: ClipboardList,
     bg: 'bg-green-50',    color: 'text-green-600',  border: 'border-green-200',
     desc: 'Gestión de materiales y equipamiento: stock actual, entradas y salidas de almacén.',
+  },
+  {
+    to: '/categories',     label: 'Categorías',    icon: Tags,
+    bg: 'bg-teal-50',     color: 'text-teal-600',   border: 'border-teal-200',
+    desc: 'Gestión de categorías de ingredientes y materiales para clasificar productos.',
   },
   {
     to: '/recipes',        label: 'Recetas',       icon: FileText,
@@ -104,17 +109,17 @@ export default function DashboardPage() {
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
           Acceso rápido
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {NAV_ITEMS.map(({ to, label, icon: Icon, bg, color, border, desc }) => (
             <Link
               key={to}
               to={to}
-              className={`group relative flex flex-col items-center gap-2.5 bg-white border ${border} rounded-xl px-3 py-4 shadow-sm hover:shadow-md active:scale-95 transition-all duration-150`}
+              className={`group relative flex flex-col items-center gap-3 bg-white border ${border} rounded-2xl px-4 py-5 shadow-sm hover:shadow-md active:scale-95 transition-all duration-150`}
             >
-              <div className={`p-2.5 rounded-xl ${bg}`}>
-                <Icon className={`w-6 h-6 ${color}`} />
+              <div className={`p-3 rounded-xl ${bg}`}>
+                <Icon className={`w-7 h-7 ${color}`} />
               </div>
-              <span className="text-xs font-semibold text-gray-700 text-center leading-tight select-none">
+              <span className="text-sm font-semibold text-gray-700 text-center leading-tight select-none">
                 {label}
               </span>
 

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Box, ClipboardList, Truck, Heart, Repeat, FileText, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
+import { Box, ClipboardList, Tags, Truck, Heart, Repeat, FileText, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 const ITEMS = [
   { to: '/products',       label: 'Ingredientes',  icon: Box,           bg: 'bg-yellow-50', color: 'text-yellow-600', ring: 'ring-yellow-200', desc: 'Catálogo de ingredientes: altas, bajas, precios y rendimientos por unidad de medida.' },
   { to: '/inventory',      label: 'Materiales',    icon: ClipboardList, bg: 'bg-green-50',  color: 'text-green-600',  ring: 'ring-green-200',  desc: 'Gestión de materiales y equipamiento: stock actual, entradas y salidas de almacén.' },
+  { to: '/categories',     label: 'Categorías',    icon: Tags,          bg: 'bg-teal-50',   color: 'text-teal-600',   ring: 'ring-teal-200',   desc: 'Gestión de categorías de ingredientes y materiales para clasificar productos.' },
   { to: '/recipes',        label: 'Recetas',       icon: FileText,      bg: 'bg-amber-50',  color: 'text-amber-600',  ring: 'ring-amber-200',  desc: 'Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos.' },
   { to: '/returns',        label: 'Bajas / Dev.',  icon: Archive,       bg: 'bg-pink-50',   color: 'text-pink-600',   ring: 'ring-pink-200',   desc: 'Registro de bajas por caducidad o rotura y devoluciones a proveedores.' },
   { to: '/orders',         label: 'Pedidos',       icon: Truck,         bg: 'bg-blue-50',   color: 'text-blue-600',   ring: 'ring-blue-200',   desc: 'Solicitudes de pedido por clase, revisión docente y consolidado semanal del economato.' },

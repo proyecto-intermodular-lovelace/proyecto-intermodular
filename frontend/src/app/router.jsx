@@ -14,6 +14,8 @@ import SuppliersFullPage from '../features/suppliers/SuppliersFullPage'
 import SupplierDetailPage from '../features/suppliers/SupplierDetailPage'
 import ReturnsPage from '../features/returns/ReturnsPage'
 import OrdersPage from '../features/orders/OrdersPage'
+import DeliveryNotesPage from '../features/delivery-notes/DeliveryNotesPage'
+import CategoriesPage from '../features/categories/CategoriesPage'
 import MainLayout from '../layouts/MainLayout'
 import RequireAuth from '../components/RequireAuth'
 import RecoverPage from '../features/auth/RecoverPage'
@@ -54,6 +56,12 @@ function AppRouter() {
 
                 {/* Pedidos */}
                 <Route path="orders" element={<OrdersPage />} />
+
+                {/* Albaranes */}
+                <Route path="delivery-notes" element={<DeliveryNotesPage />} />
+
+                {/* Categorías */}
+                <Route path="categories" element={<CategoriesPage />} />
 
                 <Route path="profile" element={<ProfilePage />} />
             </Route>

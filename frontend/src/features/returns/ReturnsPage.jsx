@@ -106,31 +106,34 @@ export default function ReturnsPage() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold">Tipo:</label>
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCategory('') }} className="px-2 py-1 rounded-lg border">
+        {/* Mode toggle */}
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setMode('merma')} className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${mode === 'merma' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700'}`}>Merma / Baja</button>
+          <button onClick={() => setMode('devolucion')} className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${mode === 'devolucion' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>Devolución</button>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-600">Tipo</label>
+            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCategory('') }} className="w-full px-2 py-1.5 rounded-lg border text-sm">
               <option value="ALL">Todos</option>
               <option value="INGREDIENT">Ingredientes</option>
               <option value="MATERIAL">Materiales</option>
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold">Categoría:</label>
-            <select value={category} onChange={e => setCategory(e.target.value)} className="px-2 py-1 rounded-lg border">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-600">Categoría</label>
+            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-2 py-1.5 rounded-lg border text-sm">
               <option value="">Todas</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por nombre o SKU" className="px-3 py-1 rounded-lg border" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button onClick={() => setMode('merma')} className={`px-3 py-1 rounded-lg font-semibold ${mode === 'merma' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700'}`}>Merma / Baja</button>
-            <button onClick={() => setMode('devolucion')} className={`px-3 py-1 rounded-lg font-semibold ${mode === 'devolucion' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>Devolución</button>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-600">Buscar</label>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Nombre o SKU" className="w-full px-3 py-1.5 rounded-lg border text-sm" />
           </div>
         </div>
 
@@ -142,14 +145,16 @@ export default function ReturnsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {filtered.map(p => (
-                <div key={p.id} className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-white">
-                  <div>
-                    <div className="font-semibold text-sm">{p.nombre || p.sku}</div>
-                    <div className="text-xs text-gray-500">{p.sku} — {p.categoria}</div>
+                <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 border rounded-lg bg-white">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate">{p.nombre || p.sku}</div>
+                    <div className="text-xs text-gray-500 truncate">{p.sku} — {p.categoria}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm text-gray-700">Stock: {p.stock ?? '-'}</div>
-                    <button onClick={() => handleApply(p)} className="px-3 py-1 rounded-lg bg-black text-white text-xs font-bold">{mode === 'merma' ? 'Aplicar Merma' : 'Registrar Devolución'}</button>
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <span className="text-sm text-gray-700 whitespace-nowrap">Stock: {p.stock ?? '-'}</span>
+                    <button onClick={() => handleApply(p)} className="px-3 py-1.5 rounded-lg bg-black text-white text-xs font-bold whitespace-nowrap ml-auto">
+                      {mode === 'merma' ? 'Merma' : 'Devolución'}
+                    </button>
                   </div>
                 </div>
               ))}

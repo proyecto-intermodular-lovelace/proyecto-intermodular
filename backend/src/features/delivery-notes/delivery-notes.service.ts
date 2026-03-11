@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { QueryFailedError } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeliveryNote, DeliveryStatus } from './entities/delivery-note.entity';
+import { DeliveryNote } from './entities/delivery-note.entity';
+import { DeliveryNoteItem } from './entities/delivery-note-item.entity';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { PaginatedResponse } from '../../common/dto/paginated-response.interface';
 import { PaginationService } from '../../common/services/pagination.service';
@@ -14,6 +15,8 @@ export class DeliveryNotesService {
   constructor(
     @InjectRepository(DeliveryNote)
     private readonly deliveryNotesRepository: Repository<DeliveryNote>,
+    @InjectRepository(DeliveryNoteItem)
+    private readonly itemsRepository: Repository<DeliveryNoteItem>,
     private readonly paginationService: PaginationService,
   ) {}
 
@@ -33,63 +36,52 @@ export class DeliveryNotesService {
   }
 
   async findOne(id: string): Promise<DeliveryNote> {
-    const note = await this.deliveryNotesRepository.findOne({
-      where: { id },
-    });
-
+    const note = await this.deliveryNotesRepository.findOne({ where: { id } });
     if (!note) {
-      throw new NotFoundException(`Nota de entrega con ID ${id} no encontrada`);
+      throw new NotFoundException(`Albarán con ID ${id} no encontrado`);
     }
-
     return note;
   }
 
-  async findByPedidoPaginated(
-    pedidoId: string,
-    paginationDto: PaginationQueryDto,
-  ): Promise<PaginatedResponse<DeliveryNote>> {
-    return this.paginationService.paginateRepository(
-      this.deliveryNotesRepository,
-      paginationDto,
-      { pedidoId },
-    );
-  }
-
-  async findByPedido(pedidoId: string): Promise<DeliveryNote[]> {
-    return this.deliveryNotesRepository.find({
-      where: { pedidoId },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async create(createDto: CreateDeliveryNoteDto): Promise<DeliveryNote> {
-    const note = this.deliveryNotesRepository.create(createDto);
+  async create(dto: CreateDeliveryNoteDto, receivedBy: string): Promise<DeliveryNote> {
+    const { items, ...header } = dto;
+    const note = this.deliveryNotesRepository.create({ ...header, receivedBy });
     try {
-      return await this.deliveryNotesRepository.save(note);
+      const saved = await this.deliveryNotesRepository.save(note);
+      if (items?.length) {
+        const itemEntities = items.map(i =>
+          this.itemsRepository.create({ ...i, deliveryNoteId: saved.id }),
+        );
+        await this.itemsRepository.save(itemEntities);
+      }
+      return this.findOne(saved.id);
     } catch (err) {
-      // Handle unique constraint violation for numero_remito (Postgres code 23505)
       if (err instanceof QueryFailedError || (err && (err as any).code)) {
         const code = (err as any).code || (err as any).driverError?.code;
         if (code === '23505') {
-          throw new ConflictException('numeroRemito already exists');
+          throw new ConflictException('El código de albarán ya existe');
         }
       }
       throw err;
     }
   }
 
-  async update(
-    id: string,
-    updateDto: UpdateDeliveryNoteDto,
-  ): Promise<DeliveryNote> {
+  async update(id: string, dto: UpdateDeliveryNoteDto): Promise<DeliveryNote> {
     await this.findOne(id);
-    await this.deliveryNotesRepository.update(id, updateDto);
+    const { items, ...header } = dto;
+    if (Object.keys(header).length) {
+      await this.deliveryNotesRepository.update(id, header);
+    }
+    if (items) {
+      await this.itemsRepository.delete({ deliveryNoteId: id });
+      if (items.length) {
+        const itemEntities = items.map(i =>
+          this.itemsRepository.create({ ...i, deliveryNoteId: id }),
+        );
+        await this.itemsRepository.save(itemEntities);
+      }
+    }
     return this.findOne(id);
-  }
-
-  async updateStatus(id: string, estado: DeliveryStatus): Promise<DeliveryNote> {
-    const updateDto: UpdateDeliveryNoteDto = { estado };
-    return this.update(id, updateDto);
   }
 
   async delete(id: string): Promise<void> {
