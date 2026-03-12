@@ -26,7 +26,6 @@ export class RecipesService {
     return this.recipesRepo
       .createQueryBuilder('recipe')
       .leftJoinAndSelect('recipe.items', 'items')
-      .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('recipe.allergens', 'allergens')
       .orderBy('recipe.createdAt', 'DESC')
       .getMany();
@@ -37,13 +36,25 @@ export class RecipesService {
       .createQueryBuilder('recipe')
       .where('recipe.id = :id', { id })
       .leftJoinAndSelect('recipe.items', 'items')
-      .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('recipe.allergens', 'allergens')
       .getOne();
     
     if (!recipe) {
       throw new NotFoundException(`Receta con ID ${id} no encontrada`);
     }
+    
+    // Cargar los productos asociados a cada item
+    if (recipe.items && recipe.items.length > 0) {
+      for (const item of recipe.items) {
+        const product = await this.productsRepo.findOne({
+          where: { id: item.productId },
+        });
+        if (product) {
+          item.product = product;
+        }
+      }
+    }
+    
     return recipe;
   }
 
