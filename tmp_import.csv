@@ -1,0 +1,3 @@
+sku,name,unitType,unitPrice,description,stock,supplierId,categoryId
+PRD-100,Producto Test,UNIT,1.5,Descripcion de prueba,10,,
+PRD-101,Producto 2,KG,2.0,Otra desc,5,,

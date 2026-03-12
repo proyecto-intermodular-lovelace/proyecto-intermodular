@@ -1,0 +1,5 @@
+code,description,price,stock,stockMinimo,categoryId
+SKU-001,Manzana roja,0.50,100,10,1
+SKU-002,Plátano,0.30,200,20,1
+SKU-003,Harina 1kg,1.20,50,5,2
+INVALID_UUID,Sin categoría,2.00,10,1,not-a-uuid

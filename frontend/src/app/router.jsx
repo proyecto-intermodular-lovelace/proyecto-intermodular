@@ -5,6 +5,7 @@ import DashboardPage from '../features/dashboard/DashboardPage'
 import IngredientsSummaryPage from '../features/ingredients/IngredientsSummaryPage'
 import IngredientsFullPage from '../features/ingredients/IngredientsFullPage'
 import IngredientDetailPage from '../features/ingredients/IngredientDetailPage'
+import ProductsImportPage from '../features/products/ProductsImportPage'
 import MaterialsSummaryPage from '../features/materials/MaterialsSummaryPage'
 import MaterialsFullPage from '../features/materials/MaterialsFullPage'
 import MaterialDetailPage from '../features/materials/MaterialDetailPage'
@@ -36,6 +37,7 @@ function AppRouter() {
                 {/* Ingredientes */}
                 <Route path="products" element={<IngredientsSummaryPage />} />
                 <Route path="products/full" element={<IngredientsFullPage />} />
+                <Route path="products/import" element={<ProductsImportPage />} />
                 <Route path="products/new" element={<IngredientDetailPage />} />
                 <Route path="products/:id" element={<IngredientDetailPage />} />
 
