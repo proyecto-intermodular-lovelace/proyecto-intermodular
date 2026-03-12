@@ -114,19 +114,23 @@ export class RecipesService {
   async addItem(recipeId: string, dto: CreateRecipeItemDto): Promise<RecipeItem> {
     const recipe = await this.findOne(recipeId);
 
-    const product = await this.productsRepo.findOne({
-      where: { id: dto.productId },
-    });
+    // Get product price using raw query to avoid column mapping issues
+    const productResult = await this.productsRepo.query(
+      'SELECT precio FROM public.products WHERE id = $1',
+      [dto.productId]
+    );
 
-    if (!product) {
+    if (!productResult || productResult.length === 0) {
       throw new NotFoundException('Producto no encontrado');
     }
+
+    const unitPrice = productResult[0].precio;
 
     const item = this.itemsRepo.create({
       recipeId,
       productId: dto.productId,
       quantity: dto.quantity,
-      unitPrice: product.unitPrice,
+      unitPrice: unitPrice,
     });
 
     return this.itemsRepo.save(item);
