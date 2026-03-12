@@ -210,11 +210,11 @@ export default function RecipeDetailPage() {
       <div className="flex items-center justify-between mb-1 md:mb-2">
         <button
           type="button"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-cifp-blue hover:text-cifp-blue-dark transition-colors text-sm"
+          onClick={() => navigate('/recipes')}
+          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-medium">Volver atrás</span>
+          <span>Volver a Recetas</span>
         </button>
 
         <h1 className="text-lg md:text-xl font-bold text-gray-800 uppercase truncate">
@@ -366,210 +366,214 @@ export default function RecipeDetailPage() {
         )}
       </form>
 
-      {/* Escandallo - Tabla de ingredientes */}
-      {!isCreate && (
-        <>
-          <div className="mt-4 md:mt-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Package className="w-5 h-5" /> Escandallo
-            </h2>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setShowAddItem(true)}
-                className="text-xs text-cifp-blue hover:underline flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" /> Agregar ingrediente
-              </button>
-            )}
-          </div>
-
-          {items.length > 0 && (
-            <div className="mt-2 border rounded-xl overflow-hidden bg-white">
-              <table className="w-full text-sm">
-                <thead className="bg-cifp-neutral-100 sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Producto</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Cantidad</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Precio ud.</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Coste</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-cifp-neutral-200">
-                  {items.map(item => (
-                    <tr key={item.id} className="hover:bg-cifp-neutral-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-cifp-neutral-900">{item.product?.name}</td>
-                      <td className="px-4 py-3 text-right font-mono text-sm">{Number(item.quantity).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-sm">{Number(item.unitPrice).toFixed(2)} €</td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-sm">{(Number(item.quantity) * Number(item.unitPrice)).toFixed(2)} €</td>
-                      <td className="px-4 py-3 text-center">
-                        {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {items.length === 0 && (
-            <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-gray-50">
-              No hay ingredientes agregados
-            </div>
-          )}
-
-          {/* Costes Card */}
-          <Card className="mt-4 md:mt-6 p-4 short:p-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Coste Total</p>
-                <p className="text-2xl font-bold text-cifp-neutral-900">{totalCost.toFixed(2)} €</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Por Ración</p>
-                <p className="text-2xl font-bold text-green-600">{costPerRation.toFixed(2)} €</p>
-              </div>
-            </div>
-          </Card>
-
-           {/* Alérgenos */}
+       {/* Escandallo - Tabla de ingredientes */}
+       <>
            <div className="mt-4 md:mt-6 flex items-center justify-between">
              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-               <AlertTriangle className="w-5 h-5 text-red-500" /> Alérgenos
+               <Package className="w-5 h-5" /> Escandallo
              </h2>
-             {isAdmin && (
+             {!isCreate && isAdmin && (
                <button
                  type="button"
-                 onClick={() => setShowAddAllergen(true)}
+                 onClick={() => setShowAddItem(true)}
                  className="text-xs text-cifp-blue hover:underline flex items-center gap-1"
                >
-                 <Plus className="w-3 h-3" /> Agregar alérgeno
+                 <Plus className="w-3 h-3" /> Agregar ingrediente
                </button>
              )}
            </div>
 
-           {allergens.length > 0 ? (
-             <div className="mt-2 flex flex-wrap gap-2">
-               {allergens.map(a => (
-                 <div key={a.id} className="bg-red-50 border border-red-200 rounded-lg px-3 py-1 flex items-center gap-2">
-                   <span className="text-sm font-medium text-red-800">{a.name}</span>
-                   {isAdmin && (
-                     <button
-                       type="button"
-                       onClick={() => handleDeleteAllergen(a.id)}
-                       className="text-red-500 hover:text-red-700 transition-colors"
-                     >
-                       <X className="w-3 h-3" />
-                     </button>
-                   )}
-                 </div>
-               ))}
+           {isCreate ? (
+             <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-blue-50">
+               Guarda la receta primero para agregar ingredientes
+             </div>
+           ) : items.length > 0 ? (
+             <div className="mt-2 border rounded-xl overflow-hidden bg-white">
+               <table className="w-full text-sm">
+                 <thead className="bg-cifp-neutral-100 sticky top-0 z-10 shadow-sm">
+                   <tr>
+                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Producto</th>
+                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Cantidad</th>
+                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Precio ud.</th>
+                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Coste</th>
+                     <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Acciones</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-cifp-neutral-200">
+                   {items.map(item => (
+                     <tr key={item.id} className="hover:bg-cifp-neutral-50 transition-colors">
+                       <td className="px-4 py-3 text-sm font-medium text-cifp-neutral-900">{item.product?.name}</td>
+                       <td className="px-4 py-3 text-right font-mono text-sm">{Number(item.quantity).toFixed(2)}</td>
+                       <td className="px-4 py-3 text-right font-mono text-sm">{Number(item.unitPrice).toFixed(2)} €</td>
+                       <td className="px-4 py-3 text-right font-mono font-bold text-sm">{(Number(item.quantity) * Number(item.unitPrice)).toFixed(2)} €</td>
+                       <td className="px-4 py-3 text-center">
+                         {isAdmin && (
+                           <button
+                             type="button"
+                             onClick={() => handleDeleteItem(item.id)}
+                             className="text-red-500 hover:text-red-700 transition-colors"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                         )}
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
              </div>
            ) : (
              <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-gray-50">
-               Sin alérgenos registrados
+               No hay ingredientes agregados
              </div>
            )}
 
-           {/* Add Item Modal */}
-           {showAddItem && (
-             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
-               <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
-                 <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Ingrediente</h2>
-
-                 <form onSubmit={handleAddItem} className="space-y-4">
-                   <div>
-                     <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Producto *</label>
-                     <select
-                       value={selectedProductId}
-                       onChange={e => setSelectedProductId(e.target.value)}
-                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                     >
-                       <option value="">Seleccionar...</option>
-                       {products.filter(p => p.productType === 'INGREDIENT').map(p => (
-                         <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
-                       ))}
-                     </select>
-                   </div>
-
-                   <div>
-                     <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Cantidad *</label>
-                     <input
-                       type="number"
-                       step="0.01"
-                       value={selectedQuantity}
-                       onChange={e => setSelectedQuantity(e.target.value)}
-                       placeholder="Ej: 500"
-                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                     />
-                   </div>
-
-                   <div className="flex justify-end gap-3 mt-6">
-                     <button
-                       type="button"
-                       onClick={() => setShowAddItem(false)}
-                       className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                     >
-                       <X className="w-4 h-4" /> Cancelar
-                     </button>
-                     <button
-                       type="submit"
-                       disabled={saving || !selectedProductId || !selectedQuantity}
-                       className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white bg-cifp-blue rounded-lg hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
-                     >
-                       <Check className="w-4 h-4" /> {saving ? 'Agregando...' : 'Agregar'}
-                     </button>
-                   </div>
-                 </form>
+           {/* Costes Card */}
+           <Card className="mt-4 md:mt-6 p-4 short:p-3">
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <p className="text-xs text-gray-500 uppercase tracking-wide">Coste Total</p>
+                 <p className="text-2xl font-bold text-cifp-neutral-900">{totalCost.toFixed(2)} €</p>
+               </div>
+               <div>
+                 <p className="text-xs text-gray-500 uppercase tracking-wide">Por Ración</p>
+                 <p className="text-2xl font-bold text-green-600">{costPerRation.toFixed(2)} €</p>
                </div>
              </div>
-           )}
+           </Card>
 
-           {/* Add Allergen Modal */}
-           {showAddAllergen && (
-             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddAllergen(false)}>
-               <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
-                 <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
+            {/* Alérgenos */}
+            <div className="mt-4 md:mt-6 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" /> Alérgenos
+              </h2>
+              {!isCreate && isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddAllergen(true)}
+                  className="text-xs text-cifp-blue hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> Agregar alérgeno
+                </button>
+              )}
+            </div>
 
-                 <div className="space-y-4">
-                   <select
-                     onChange={e => {
-                       if (e.target.value) handleAddAllergen(e.target.value)
-                     }}
-                     className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                   >
-                     <option value="">Seleccionar alérgeno...</option>
-                     {availableAllergens
-                       .filter(a => !allergens.some(al => al.id === a.id))
-                       .map(a => (
-                         <option key={a.id} value={a.id}>{a.name}</option>
-                       ))}
-                   </select>
-                 </div>
+            {isCreate ? (
+              <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-blue-50">
+                Guarda la receta primero para agregar alérgenos
+              </div>
+            ) : allergens.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allergens.map(a => (
+                  <div key={a.id} className="bg-red-50 border border-red-200 rounded-lg px-3 py-1 flex items-center gap-2">
+                    <span className="text-sm font-medium text-red-800">{a.name}</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAllergen(a.id)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-gray-50">
+                Sin alérgenos registrados
+              </div>
+            )}
 
-                 <div className="flex justify-end gap-3 mt-6">
-                   <button
-                     type="button"
-                     onClick={() => setShowAddAllergen(false)}
-                     className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                   >
-                     <X className="w-4 h-4" /> Cancelar
-                   </button>
-                 </div>
-               </div>
-             </div>
-           )}
-         </>
-       )}
-     </div>
+            {/* Add Item Modal */}
+            {showAddItem && !isCreate && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Ingrediente</h2>
+
+                  <form onSubmit={handleAddItem} className="space-y-4">
+                    <div>
+                      <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Producto *</label>
+                      <select
+                        value={selectedProductId}
+                        onChange={e => setSelectedProductId(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                      >
+                        <option value="">Seleccionar...</option>
+                        {products.filter(p => p.productType === 'INGREDIENT').map(p => (
+                          <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Cantidad *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={selectedQuantity}
+                        onChange={e => setSelectedQuantity(e.target.value)}
+                        placeholder="Ej: 500"
+                        className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddItem(false)}
+                        className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <X className="w-4 h-4" /> Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving || !selectedProductId || !selectedQuantity}
+                        className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white bg-cifp-blue rounded-lg hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
+                      >
+                        <Check className="w-4 h-4" /> {saving ? 'Agregando...' : 'Agregar'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Add Allergen Modal */}
+            {showAddAllergen && !isCreate && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddAllergen(false)}>
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
+
+                  <div className="space-y-4">
+                    <select
+                      onChange={e => {
+                        if (e.target.value) handleAddAllergen(e.target.value)
+                      }}
+                      className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                    >
+                      <option value="">Seleccionar alérgeno...</option>
+                      {availableAllergens
+                        .filter(a => !allergens.some(al => al.id === a.id))
+                        .map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddAllergen(false)}
+                      className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+             )}
+          </>
+      </div>
    )
  }

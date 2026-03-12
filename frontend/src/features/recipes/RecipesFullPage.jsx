@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
@@ -7,6 +8,7 @@ import { mockRecipes } from '../../services/recipes.mock'
 import apiFetch from '../../services/api'
 
 export default function RecipesFullPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const isAdmin = user?.role !== 'USER'
 
@@ -243,7 +245,7 @@ export default function RecipesFullPage() {
           <h1 className="text-3xl font-bold text-cifp-neutral-900 short:text-xl">Recetas</h1>
         </div>
         {isAdmin && (
-          <Button onClick={openCreate} className="flex items-center gap-2">
+          <Button onClick={() => navigate('/recipes/new')} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             <span>Nueva Receta</span>
           </Button>
