@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, ArrowLeft, AlertTriangle, Edit, X, Check, Trash2, Plus, Package } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthProvider'
@@ -42,8 +43,6 @@ export default function RecipeDetailPage() {
    const [showAddAllergen, setShowAddAllergen] = useState(false)
    const [availableAllergens, setAvailableAllergens] = useState([])
 
-   console.log('Estado del componente:', { showAddAllergen, availableAllergens: availableAllergens.length, allergens: allergens.length })
-
    useEffect(() => {
      // Usar endpoint específico para ingredientes de recetas
      apiFetch('/recipes/ingredients')
@@ -55,13 +54,9 @@ export default function RecipeDetailPage() {
      
      getAllergens(100)
        .then(data => {
-         console.log('Alérgenos cargados:', data)
          setAvailableAllergens(data)
        })
-       .catch(err => {
-         console.error('Error cargando alérgenos:', err)
-         setAvailableAllergens([])
-       })
+       .catch(() => setAvailableAllergens([]))
    }, [])
 
   useEffect(() => {
@@ -157,11 +152,15 @@ export default function RecipeDetailPage() {
     if (!allergenId) return
     setSaving(true)
     try {
-      await addRecipeAllergen(id, allergenId)
+      console.log('Agregando alérgeno:', allergenId)
+      const result = await addRecipeAllergen(id, allergenId)
+      console.log('Resultado de agregar alérgeno:', result)
       const data = await getRecipeById(id)
+      console.log('Datos de la receta después de agregar:', data)
       if (data) setAllergens(data.allergens || [])
       setShowAddAllergen(false)
     } catch (err) {
+      console.error('Error al agregar alérgeno:', err)
       alert(err?.body?.message || err.message || 'Error al agregar alérgeno')
     } finally {
       setSaving(false)
@@ -191,7 +190,6 @@ export default function RecipeDetailPage() {
   // Agrupar alérgenos por categoría
   const allergensByCategory = useMemo(() => {
     const grouped = {}
-    console.log('Disponibles para agrupar:', availableAllergens)
     availableAllergens.forEach(allergen => {
       const category = allergen.category || 'Otros'
       if (!grouped[category]) {
@@ -199,7 +197,6 @@ export default function RecipeDetailPage() {
       }
       grouped[category].push(allergen)
     })
-    console.log('Alérgenos agrupados por categoría:', grouped)
     return grouped
   }, [availableAllergens])
 
@@ -229,6 +226,7 @@ export default function RecipeDetailPage() {
   }
 
   return (
+    <>
     <div className="h-full w-full max-w-4xl mx-auto flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-1 md:mb-2">
@@ -510,7 +508,7 @@ export default function RecipeDetailPage() {
             )}
 
             {/* Add Item Modal */}
-            {showAddItem && !isCreate && (
+            {typeof document !== 'undefined' && showAddItem && !isCreate && createPortal(
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
                   <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Ingrediente</h2>
@@ -560,56 +558,56 @@ export default function RecipeDetailPage() {
                     </div>
                   </form>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
 
-            {/* Add Allergen Modal */}
-            {showAddAllergen && !isCreate && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddAllergen(false)}>
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
-                  <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
 
-                   <div className="space-y-4">
-                     <select
-                       value=""
-                       onChange={e => {
-                         if (e.target.value) {
-                           handleAddAllergen(e.target.value)
-                           e.target.value = ""
-                         }
-                       }}
-                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                     >
-                       <option value="">Seleccionar alérgeno... ({availableAllergens.length})</option>
-                       {availableAllergens.length === 0 ? (
-                         <option disabled>No hay alérgenos disponibles</option>
-                       ) : (
-                         Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
-                           <optgroup key={category} label={category}>
-                             {categoryAllergens
-                               .filter(a => !allergens.some(al => al.allergenName === a.name))
-                               .map(a => (
-                                 <option key={a.id} value={a.id}>{a.name}</option>
-                               ))}
-                           </optgroup>
-                         ))
-                       )}
-                     </select>
-                   </div>
+           </>
+       </div>
 
-                  <div className="flex justify-end gap-3 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAllergen(false)}
-                      className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
-             )}
-          </>
-      </div>
-   )
- }
+       {typeof document !== 'undefined' && showAddAllergen && !isCreate && createPortal(
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddAllergen(false)}>
+           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+             <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
+
+             <div className="space-y-4">
+               <select
+                 value=""
+                 onChange={e => {
+                   if (e.target.value) {
+                     handleAddAllergen(e.target.value)
+                     e.target.value = ""
+                   }
+                 }}
+                 className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+               >
+                 <option value="">Seleccionar alérgeno...</option>
+                 {Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
+                   <optgroup key={category} label={category}>
+                     {categoryAllergens
+                       .filter(a => !allergens.some(al => al.allergenName === a.name))
+                       .map(a => (
+                         <option key={a.id} value={a.id}>{a.name}</option>
+                       ))}
+                   </optgroup>
+                 ))}
+               </select>
+             </div>
+
+             <div className="flex justify-end gap-3 mt-6">
+               <button
+                 type="button"
+                 onClick={() => setShowAddAllergen(false)}
+                 className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+               >
+                 <X className="w-4 h-4" /> Cancelar
+               </button>
+             </div>
+           </div>
+         </div>,
+         document.body
+       )}
+       </>
+    )
+  }
