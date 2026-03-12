@@ -17,6 +17,9 @@ export class Allergen {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ type: 'varchar', length: 100, default: 'Alimentos' })
+  category: string;
+
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 

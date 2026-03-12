@@ -93,10 +93,10 @@ export default function RecipeDetailPage() {
         name: recipe.name,
         description: recipe.description,
         difficulty: recipe.difficulty,
-        yieldQuantity: Number(recipe.yieldQuantity),
+        yieldQuantity: Number(recipe.yieldQuantity) || 1,
         yieldUnit: recipe.yieldUnit,
-        prepTime: Number(recipe.prepTime),
-        cookTime: Number(recipe.cookTime),
+        prepTime: Number(recipe.prepTime) || 0,
+        cookTime: Number(recipe.cookTime) || 0,
       }
       if (isCreate) {
         await createRecipe(payload)
@@ -179,6 +179,19 @@ export default function RecipeDetailPage() {
   }, [items])
 
   const costPerRation = recipe.yieldQuantity ? totalCost / Number(recipe.yieldQuantity) : 0
+
+  // Agrupar alérgenos por categoría
+  const allergensByCategory = useMemo(() => {
+    const grouped = {}
+    availableAllergens.forEach(allergen => {
+      const category = allergen.category || 'Otros'
+      if (!grouped[category]) {
+        grouped[category] = []
+      }
+      grouped[category].push(allergen)
+    })
+    return grouped
+  }, [availableAllergens])
 
   // Loading state
   if (loading) {
@@ -546,7 +559,7 @@ export default function RecipeDetailPage() {
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
                   <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
 
-                  <div className="space-y-4">
+                   <div className="space-y-4">
                     <select
                       onChange={e => {
                         if (e.target.value) handleAddAllergen(e.target.value)
@@ -554,11 +567,15 @@ export default function RecipeDetailPage() {
                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
                     >
                       <option value="">Seleccionar alérgeno...</option>
-                      {availableAllergens
-                        .filter(a => !allergens.some(al => al.id === a.id))
-                        .map(a => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
+                      {Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
+                        <optgroup key={category} label={category}>
+                          {categoryAllergens
+                            .filter(a => !allergens.some(al => al.allergenName === a.name))
+                            .map(a => (
+                              <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
 

@@ -110,4 +110,26 @@ export class RecipesController {
   ): Promise<RecipeAllergen[]> {
     return this.recipesService.syncAllergens(id);
   }
+
+  @ApiOperation({ summary: 'Agregar alérgeno a receta (ADMIN+)' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Post(':id/allergens')
+  async addAllergen(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { allergenId: string },
+  ): Promise<RecipeAllergen> {
+    return this.recipesService.addAllergen(id, body.allergenId);
+  }
+
+  @ApiOperation({ summary: 'Eliminar alérgeno de receta (ADMIN+)' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Delete(':id/allergens/:allergenId')
+  async removeAllergen(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('allergenId', new ParseUUIDPipe()) allergenId: string,
+  ): Promise<void> {
+    return this.recipesService.removeAllergen(id, allergenId);
+  }
 }

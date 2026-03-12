@@ -11,10 +11,21 @@ export class AllergensService {
   ) {}
 
   async findAll(): Promise<Allergen[]> {
-    return this.allergensRepo.find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    });
+    const allergens = await this.allergensRepo.query(`
+      SELECT 
+        id,
+        name,
+        description,
+        category,
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM public.allergens
+      WHERE is_active = true
+      ORDER BY name ASC
+    `);
+    
+    return allergens;
   }
 
   async findOne(id: string): Promise<Allergen | null> {

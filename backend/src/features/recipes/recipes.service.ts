@@ -48,30 +48,76 @@ export class RecipesService {
   }
 
   async findOne(id: string): Promise<Recipe> {
-    const recipe = await this.recipesRepo
-      .createQueryBuilder('recipe')
-      .where('recipe.id = :id', { id })
-      .leftJoinAndSelect('recipe.items', 'items')
-      .leftJoinAndSelect('recipe.allergens', 'allergens')
-      .getOne();
-    
-    if (!recipe) {
+    // Get recipe using raw query to avoid TypeORM column mapping issues
+    const recipes = await this.recipesRepo.query(
+      `SELECT 
+        id,
+        code,
+        name,
+        description,
+        difficulty,
+        yield_quantity as "yieldQuantity",
+        yield_unit as "yieldUnit",
+        prep_time as "prepTime",
+        cook_time as "cookTime",
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM public.recipes WHERE id = $1`,
+      [id]
+    );
+
+    if (!recipes || recipes.length === 0) {
       throw new NotFoundException(`Receta con ID ${id} no encontrada`);
     }
+
+    const recipe = recipes[0];
+
+    // Get items for this recipe
+    const itemsRaw = await this.itemsRepo.query(
+      `SELECT id, recipe_id, product_id, quantity, unit_price FROM public.recipe_items WHERE recipe_id = $1`,
+      [id]
+    );
     
-    // Cargar los productos asociados a cada item
-    if (recipe.items && recipe.items.length > 0) {
-      for (const item of recipe.items) {
-        const product = await this.productsRepo.findOne({
-          where: { id: item.productId },
-        });
-        if (product) {
-          item.product = product;
+    // Map snake_case to camelCase
+    const items = itemsRaw.map(item => ({
+      id: item.id,
+      recipeId: item.recipe_id,
+      productId: item.product_id,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unit_price),
+      product: null,
+    }));
+
+    // Get allergens for this recipe
+    const allergens = await this.allergensRepo.query(
+      `SELECT * FROM public.recipe_allergens WHERE recipe_id = $1`,
+      [id]
+    );
+
+    // Load products for each item
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const products = await this.productsRepo.query(
+          `SELECT id, sku, nombre, descripcion, precio FROM public.products WHERE id = $1`,
+          [item.productId]
+        );
+        if (products && products.length > 0) {
+          item.product = {
+            id: products[0].id,
+            code: products[0].sku,
+            name: products[0].nombre,
+            description: products[0].descripcion,
+            unitPrice: products[0].precio,
+          };
         }
       }
     }
-    
-    return recipe;
+
+    recipe.items = items;
+    recipe.allergens = allergens;
+
+    return recipe as Recipe;
   }
 
   async create(dto: CreateRecipeDto): Promise<Recipe> {
@@ -157,5 +203,32 @@ export class RecipesService {
     // Por ahora, solo retornar vacío
     // La lógica de detección de alérgenos se implementaría aquí
     return [];
+  }
+
+  async addAllergen(recipeId: string, allergenId: string): Promise<RecipeAllergen> {
+    const recipe = await this.findOne(recipeId);
+
+    // Get allergen name from allergens table
+    const allergenResult = await this.allergensRepo.query(
+      'SELECT name FROM public.allergens WHERE id = $1',
+      [allergenId]
+    );
+
+    if (!allergenResult || allergenResult.length === 0) {
+      throw new NotFoundException('Alérgeno no encontrado');
+    }
+
+    const allergenName = allergenResult[0].name;
+
+    const allergen = this.allergensRepo.create({
+      recipeId,
+      allergenName,
+    });
+
+    return this.allergensRepo.save(allergen);
+  }
+
+  async removeAllergen(recipeId: string, allergenId: string): Promise<void> {
+    await this.allergensRepo.delete({ id: allergenId, recipeId });
   }
 }
