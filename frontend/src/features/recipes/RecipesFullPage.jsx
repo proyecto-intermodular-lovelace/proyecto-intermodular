@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react'
+import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Download, ArrowLeft } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { getRecipes } from '../../services/recipes.service'
@@ -241,6 +241,13 @@ export default function RecipesFullPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/recipes')}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Volver</span>
+          </button>
           <ChefHat className="h-8 w-8 text-orange-600 short:h-6 short:w-6" />
           <h1 className="text-3xl font-bold text-cifp-neutral-900 short:text-xl">Recetas</h1>
         </div>
