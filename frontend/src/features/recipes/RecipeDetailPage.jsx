@@ -43,7 +43,8 @@ export default function RecipeDetailPage() {
   const [availableAllergens, setAvailableAllergens] = useState([])
 
   useEffect(() => {
-    apiFetch('/products?limit=1000')
+    // Usar endpoint específico para ingredientes de recetas
+    apiFetch('/recipes/ingredients')
       .then(res => {
         const prods = res?.data ?? res
         setProducts(Array.isArray(prods) ? prods : [])

@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,6 +24,7 @@ import { RecipeAllergen } from './entities/recipe-allergen.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { CreateRecipeItemDto } from './dto/create-recipe-item.dto';
+import { Product } from '../products/entities/product.entity';
 
 @ApiTags('Recipes')
 @ApiBearerAuth('jwt')
@@ -31,6 +33,12 @@ import { CreateRecipeItemDto } from './dto/create-recipe-item.dto';
 @UseGuards(JwtAuthGuard)
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
+
+  @ApiOperation({ summary: 'Obtener ingredientes disponibles para recetas' })
+  @Get('ingredients')
+  async getIngredients(): Promise<Product[]> {
+    return this.recipesService.getIngredients();
+  }
 
   @ApiOperation({ summary: 'Obtener todas las recetas' })
   @Get()

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Recipe } from './entities/recipe.entity';
 import { RecipeItem } from './entities/recipe-item.entity';
 import { RecipeAllergen } from './entities/recipe-allergen.entity';
-import { Product } from '../products/entities/product.entity';
+import { Product, ProductType } from '../products/entities/product.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { CreateRecipeItemDto } from './dto/create-recipe-item.dto';
@@ -21,6 +21,18 @@ export class RecipesService {
     @InjectRepository(Product)
     private readonly productsRepo: Repository<Product>,
   ) {}
+
+  async getIngredients(): Promise<Product[]> {
+    // Obtener solo ingredientes (productos tipo INGREDIENT)
+    // Sin usar PaginationService para evitar errores de columna supplier_id
+    return this.productsRepo.find({
+      where: { 
+        productType: ProductType.INGREDIENT,
+      },
+      order: { name: 'ASC' },
+      take: 1000,
+    });
+  }
 
   async findAll(): Promise<Recipe[]> {
     return this.recipesRepo
