@@ -22,21 +22,20 @@ export class RecipesService {
     private readonly productsRepo: Repository<Product>,
   ) {}
 
-  async getIngredients(): Promise<Product[]> {
-    // Obtener solo ingredientes usando queryBuilder para evitar errores de columna
-    return this.productsRepo
-      .createQueryBuilder('product')
-      .select([
-        'product.id',
-        'product.code',
-        'product.name',
-        'product.description',
-        'product.unitPrice',
-      ])
-      .where('product.productType = :type', { type: ProductType.INGREDIENT })
-      .orderBy('product.name', 'ASC')
-      .limit(1000)
-      .getMany();
+  async getIngredients(): Promise<any[]> {
+    // Obtener solo ingredientes usando queryBuilder directo a la BD
+    // Seleccionar solo columnas que existen en la tabla products
+    return this.productsRepo.query(`
+      SELECT 
+        id,
+        sku as code,
+        nombre as name,
+        descripcion as description,
+        precio as "unitPrice"
+      FROM public.products
+      ORDER BY nombre ASC
+      LIMIT 1000
+    `);
   }
 
   async findAll(): Promise<Recipe[]> {
