@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthProvider'
 import {
-  Box, ClipboardList, Truck, Heart, Repeat, FileText, Archive, Tags,
+  Box, ClipboardList, Truck, Heart, Repeat, ChefHat, Archive, Tags,
 } from 'lucide-react'
 
 // ─── Nav items with tooltip descriptions ─────────────────────────────────────
@@ -23,8 +23,8 @@ const NAV_ITEMS = [
     desc: 'Gestión de categorías de ingredientes y materiales para clasificar productos.',
   },
   {
-    to: '/recipes',        label: 'Recetas',       icon: FileText,
-    bg: 'bg-amber-50',    color: 'text-amber-600',  border: 'border-amber-200',
+    to: '/recipes',        label: 'Recetas',       icon: ChefHat,
+    bg: 'bg-orange-50',   color: 'text-orange-600', border: 'border-orange-200',
     desc: 'Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos.',
   },
   {
