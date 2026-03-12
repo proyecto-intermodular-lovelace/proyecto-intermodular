@@ -23,15 +23,20 @@ export class RecipesService {
   ) {}
 
   async getIngredients(): Promise<Product[]> {
-    // Obtener solo ingredientes (productos tipo INGREDIENT)
-    // Sin usar PaginationService para evitar errores de columna supplier_id
-    return this.productsRepo.find({
-      where: { 
-        productType: ProductType.INGREDIENT,
-      },
-      order: { name: 'ASC' },
-      take: 1000,
-    });
+    // Obtener solo ingredientes usando queryBuilder para evitar errores de columna
+    return this.productsRepo
+      .createQueryBuilder('product')
+      .select([
+        'product.id',
+        'product.code',
+        'product.name',
+        'product.description',
+        'product.unitPrice',
+      ])
+      .where('product.productType = :type', { type: ProductType.INGREDIENT })
+      .orderBy('product.name', 'ASC')
+      .limit(1000)
+      .getMany();
   }
 
   async findAll(): Promise<Recipe[]> {
