@@ -29,6 +29,11 @@ export const mockRecipes = [
         cookTime: 15,
         createdAt: '2024-01-15T10:30:00Z',
         updatedAt: '2024-01-15T10:30:00Z',
+        allergens: [
+            { id: 'alg-001', name: 'Huevo' },
+            { id: 'alg-004', name: 'Gluten' }
+        ],
+        items: [],
     },
     {
         id: 'rec-002-uuid-5678',
@@ -42,6 +47,11 @@ export const mockRecipes = [
         cookTime: 90,
         createdAt: '2024-01-16T14:20:00Z',
         updatedAt: '2024-01-16T14:20:00Z',
+        allergens: [
+            { id: 'alg-003', name: 'Mariscos' },
+            { id: 'alg-004', name: 'Gluten' }
+        ],
+        items: [],
     },
     {
         id: 'rec-003-uuid-9012',
@@ -55,6 +65,8 @@ export const mockRecipes = [
         cookTime: 25,
         createdAt: '2024-01-17T09:45:00Z',
         updatedAt: '2024-01-17T09:45:00Z',
+        allergens: [],
+        items: [],
     },
     {
         id: 'rec-004-uuid-3456',
@@ -68,6 +80,10 @@ export const mockRecipes = [
         cookTime: 0,
         createdAt: '2024-01-18T11:00:00Z',
         updatedAt: '2024-01-18T11:00:00Z',
+        allergens: [
+            { id: 'alg-003', name: 'Mariscos' }
+        ],
+        items: [],
     },
     {
         id: 'rec-005-uuid-7890',
@@ -81,6 +97,10 @@ export const mockRecipes = [
         cookTime: 30,
         createdAt: '2024-01-19T16:30:00Z',
         updatedAt: '2024-01-19T16:30:00Z',
+        allergens: [
+            { id: 'alg-004', name: 'Gluten' }
+        ],
+        items: [],
     },
     {
         id: 'rec-006-uuid-2345',
@@ -94,6 +114,10 @@ export const mockRecipes = [
         cookTime: 40,
         createdAt: '2024-01-20T13:15:00Z',
         updatedAt: '2024-01-20T13:15:00Z',
+        allergens: [
+            { id: 'alg-004', name: 'Gluten' }
+        ],
+        items: [],
     },
     {
         id: 'rec-007-uuid-6789',
@@ -107,6 +131,8 @@ export const mockRecipes = [
         cookTime: 120,
         createdAt: '2024-01-21T10:00:00Z',
         updatedAt: '2024-01-21T10:00:00Z',
+        allergens: [],
+        items: [],
     },
     {
         id: 'rec-008-uuid-0123',
@@ -120,5 +146,10 @@ export const mockRecipes = [
         cookTime: 35,
         createdAt: '2024-01-22T08:30:00Z',
         updatedAt: '2024-01-22T08:30:00Z',
+        allergens: [
+            { id: 'alg-001', name: 'Huevo' },
+            { id: 'alg-005', name: 'Frutos secos' }
+        ],
+        items: [],
     },
 ]
