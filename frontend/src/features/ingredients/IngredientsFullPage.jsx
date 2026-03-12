@@ -23,6 +23,7 @@ export default function IngredientsFullPage() {
     const [isEditing, setIsEditing] = useState(false)
     const [editProduct, setEditProduct] = useState(null)
     const [detailSaving, setDetailSaving] = useState(false)
+    const [formError, setFormError] = useState(null)
 
     // Dynamic lists from API
     const [apiCategories, setApiCategories] = useState([])
@@ -164,6 +165,7 @@ export default function IngredientsFullPage() {
     const handleOpenEdit = (product) => {
         setEditProduct({ descripcion: '', activo: true, ...product })
         setIsEditing(true)
+        setFormError(null)
     }
 
     const handleCloseEdit = () => {
@@ -178,6 +180,18 @@ export default function IngredientsFullPage() {
         if (!updated) return
         setDetailSaving(true)
         try {
+            // Validate required relations on client side to avoid backend 400
+            const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+            if (!updated.categoryId || !uuidRe.test(updated.categoryId)) {
+                setFormError('Selecciona una categoría válida (ID UUID) antes de guardar.')
+                setDetailSaving(false)
+                return
+            }
+            if (!updated.supplierId || !uuidRe.test(updated.supplierId)) {
+                setFormError('Selecciona un proveedor válido (ID UUID) antes de guardar.')
+                setDetailSaving(false)
+                return
+            }
             const payload = {
                 name: updated.nombre,
                 code: updated.sku || updated.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
@@ -208,8 +222,8 @@ export default function IngredientsFullPage() {
                 setProducts(refreshed)
             }
             handleCloseEdit()
-        } catch (err) {
-            alert(`Error: ${err?.body?.message || err.message}`)
+            } catch (err) {
+            setFormError(err?.body?.message || err.message || 'Error al guardar.')
         } finally {
             setDetailSaving(false)
         }
@@ -276,6 +290,11 @@ export default function IngredientsFullPage() {
 
                         {/* Modal form body */}
                         <div className="overflow-y-auto px-6 py-4 flex-1">
+                            {formError && (
+                                <div className="mb-3">
+                                    <p className="text-sm text-red-600">{formError}</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-12 gap-x-3 gap-y-3">
 
                                 {/* Nombre */}

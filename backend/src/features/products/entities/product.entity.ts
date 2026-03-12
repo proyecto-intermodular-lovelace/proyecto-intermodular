@@ -61,6 +61,15 @@ export class Product {
   @Column({ type: 'date', name: 'expires_at', nullable: true })
   expiresAt: string | null;
 
+  @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'integer', name: 'stock', default: 0 })
+  stock: number;
+
+  @Column({ type: 'integer', name: 'stock_minimo', nullable: true })
+  stockMinimo: number | null;
+
   @Column({ type: 'uuid', name: 'created_by' })
   createdBy: string;
 

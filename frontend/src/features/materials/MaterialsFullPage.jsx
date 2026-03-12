@@ -30,6 +30,7 @@ export default function MaterialsFullPage() {
     const [detailMode, setDetailMode] = useState(null) // null | 'view' | 'edit'
     const [detailForm, setDetailForm] = useState(null)
     const [detailSaving, setDetailSaving] = useState(false)
+    const [detailFormError, setDetailFormError] = useState(null)
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -153,6 +154,7 @@ export default function MaterialsFullPage() {
         setDetailProduct(product)
         setDetailForm({ ...product })
         setDetailMode('edit')
+        setDetailFormError(null)
     }
 
     const openDetailCreate = () => {
@@ -176,6 +178,18 @@ export default function MaterialsFullPage() {
         if (!detailForm) return
         setDetailSaving(true)
         try {
+            // Client-side validation: categoryId and supplierId must be UUIDs
+            const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+            if (!detailForm.categoryId || !uuidRe.test(detailForm.categoryId)) {
+                setDetailFormError('Selecciona una categoría válida (ID UUID).')
+                setDetailSaving(false)
+                return
+            }
+            if (!detailForm.supplierId || !uuidRe.test(detailForm.supplierId)) {
+                setDetailFormError('Selecciona un proveedor válido (ID UUID).')
+                setDetailSaving(false)
+                return
+            }
             const payload = {
                 name: detailForm.nombre,
                 code: detailForm.sku || detailForm.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
@@ -198,7 +212,7 @@ export default function MaterialsFullPage() {
             setProducts(refreshed)
             closeDetail()
         } catch (err) {
-            alert(`Error: ${err?.body?.message || err.message}`)
+            setDetailFormError(err?.body?.message || err.message || 'Error al guardar.')
         } finally {
             setDetailSaving(false)
         }
@@ -277,6 +291,11 @@ export default function MaterialsFullPage() {
 
                         {/* Modal form body */}
                         <div className="overflow-y-auto px-6 py-4 flex-1">
+                            {detailFormError && (
+                                <div className="mb-3">
+                                    <p className="text-sm text-red-600">{detailFormError}</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
 
                                 {/* Nombre */}

@@ -89,6 +89,8 @@ export default function IngredientDetailPage() {
                 productType: 'INGREDIENT',
                 unitType: form.unidad,
                 unitPrice: form.precio,
+                    description: form.descripcion,
+                    stock: form.stock,
                 yieldPercent: form.rendimiento,
                 relation: form.rendimiento / 100,
                 categoryId: form.categoryId,
