@@ -31,7 +31,15 @@ Tu rol es de **supervisión y planificación**: tú solicitas los recursos, y el
 3. **Pulsa** el botón **"Iniciar Sesión"**.
 4. Si tus credenciales son correctas, accederás al **Panel Principal** del Profesor.
 
-`[Insertar Captura de Pantalla — Pantalla de login con rol Profesor activo]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/profesor_login_activo_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/profesor_login_activo_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/profesor_login_activo_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 ### 1.2 Cerrar sesión
 
@@ -49,7 +57,15 @@ Los **Pedidos** son solicitudes formales de productos al economato para una clas
 2. Del submenú desplegado, **pulsa** **"Pedidos"**.
 3. Verás la lista de todos tus pedidos anteriores y su estado actual.
 
-`[Insertar Captura de Pantalla — Lista de pedidos del profesor]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/profesor_pedidos_lista_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/profesor_pedidos_lista_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/profesor_pedidos_lista_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 ---
 
@@ -68,7 +84,15 @@ Los **Pedidos** son solicitudes formales de productos al economato para una clas
 | **Clase/Grupo** | Selecciona el grupo de alumnos al que va dirigido. |
 | **Escandallo asociado** | Opcional. Si ya tienes un escandallo creado, puedes vincularlo. |
 
-`[Insertar Captura de Pantalla — Formulario de nuevo pedido (campos superiores)]`
+<details>
+  <summary>🖼️ <b>Ver Capturas de Pantalla (Click para expandir)</b></summary>
+  
+  **Modo Kiosco (Principal):**
+  ![Vista Kiosco](../../assets/images/profesor_pedidos_nuevo_cabecera_kiosk.JPG)
+  
+  **Otras resoluciones:**
+  <a href="../../assets/images/profesor_pedidos_nuevo_cabecera_desktop.JPG" target="_blank">💻 Ver versión Desktop</a> | <a href="../../assets/images/profesor_pedidos_nuevo_cabecera_tablet.JPG" target="_blank">📱 Ver versión Tablet</a>
+</details>
 
 4. A continuación, añade los productos que necesitas:
    - **Pulsa** el botón **"+ Añadir Línea"**.
@@ -77,7 +101,7 @@ Los **Pedidos** son solicitudes formales de productos al economato para una clas
    - Introduce la **cantidad** necesaria y la **unidad** (kg, l, ud., etc.).
    - Repite este proceso por cada producto que necesites.
 
-`[Insertar Captura de Pantalla — Línea de producto añadida al pedido]`
+![Vista de la interfaz](../../assets/images/profesor_pedidos_nuevo_linea_kiosk.JPG)
 
 5. Revisa el resumen del pedido.
 6. **Pulsa** **"Enviar Pedido"** para remitirlo al Jefe de Economato.
@@ -103,17 +127,17 @@ Los **Pedidos** son solicitudes formales de productos al economato para una clas
 
 ---
 
-## Módulo 3 — Herramientas: Gestión de Escandallos
+## Módulo 3 — Herramientas: Gestión de Recetas
 
-Un **Escandallo** es una ficha técnica de receta que detalla los ingredientes, cantidades y el coste estimado de un plato o elaboración. Es un elemento de gran valor pedagógico en los ciclos de hostelería y cocina.
+Un **Receta** es una ficha técnica de receta que detalla los ingredientes, cantidades y el coste estimado de un plato o elaboración. Es un elemento de gran valor pedagógico en los ciclos de hostelería y cocina.
 
-### 3.1 Acceder a los Escandallos
+### 3.1 Acceder a las Recetas
 
 1. En el menú lateral, **pulsa** **"Herramientas"**.
-2. **Pulsa** **"Escandallos"**.
+2. **Pulsa** **"Recetas"**.
 3. Verás la lista de todos los escandallos creados por ti y compartidos en el centro.
 
-`[Insertar Captura de Pantalla — Lista de escandallos]`
+
 
 ---
 
@@ -128,7 +152,7 @@ Un **Escandallo** es una ficha técnica de receta que detalla los ingredientes, 
 | **Número de raciones** | Para cuántas personas está calculada la receta. |
 | **Descripción/Notas** | Instrucciones adicionales, alérgenos, etc. |
 
-`[Insertar Captura de Pantalla — Cabecera del formulario de escandallo]`
+
 
 3. Añade los ingredientes uno a uno:
    - **Pulsa** **"+ Añadir Ingrediente"**.
@@ -136,7 +160,7 @@ Un **Escandallo** es una ficha técnica de receta que detalla los ingredientes, 
    - Introduce la **cantidad bruta** (antes de merma) y la **cantidad neta** (después de limpiar/pelar).
    - El sistema calculará automáticamente el **porcentaje de merma** y el **coste unitario** basándose en los precios del inventario.
 
-`[Insertar Captura de Pantalla — Línea de ingrediente con merma y coste calculados]`
+
 
 4. Comprueba el **Coste Total** y el **Coste por Ración** que el sistema calcula en la parte inferior.
 5. **Pulsa** **"Guardar Escandallo"**.
@@ -162,7 +186,7 @@ Esta es la forma más eficiente de trabajar: en lugar de añadir productos manua
 3. El sistema creará automáticamente un nuevo pedido con todas las líneas de ingredientes del escandallo, calculadas para el número de raciones indicado.
 4. Ajusta la **fecha de uso** y el **grupo** y **pulsa** **"Enviar Pedido"**.
 
-`[Insertar Captura de Pantalla — Botón "Generar Pedido" en el detalle del escandallo]`
+
 
 ---
 
@@ -234,7 +258,7 @@ El coste de los escandallos se calcula en el momento de visualización, usando e
 2. Si el error persiste, el servidor del sistema puede estar caído. Informa al administrador de IT.
 3. **No intentes modificar la configuración de red del dispositivo.**
 
-`[Insertar Captura de Pantalla — Mensaje de error de red / pantalla de error de conexión]`
+
 
 ---
 
