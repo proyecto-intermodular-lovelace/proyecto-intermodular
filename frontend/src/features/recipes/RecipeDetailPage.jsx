@@ -580,9 +580,9 @@ export default function RecipeDetailPage() {
                        }}
                        className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
                      >
-                       <option value="">Seleccionar alérgeno...</option>
-                       {Object.entries(allergensByCategory).length === 0 ? (
-                         <option disabled>Cargando alérgenos...</option>
+                       <option value="">Seleccionar alérgeno... ({availableAllergens.length})</option>
+                       {availableAllergens.length === 0 ? (
+                         <option disabled>No hay alérgenos disponibles</option>
                        ) : (
                          Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
                            <optgroup key={category} label={category}>
