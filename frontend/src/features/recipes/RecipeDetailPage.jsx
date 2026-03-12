@@ -38,23 +38,31 @@ export default function RecipeDetailPage() {
   const [selectedProductId, setSelectedProductId] = useState('')
   const [selectedQuantity, setSelectedQuantity] = useState('')
 
-  // Add allergen modal
-  const [showAddAllergen, setShowAddAllergen] = useState(false)
-  const [availableAllergens, setAvailableAllergens] = useState([])
+   // Add allergen modal
+   const [showAddAllergen, setShowAddAllergen] = useState(false)
+   const [availableAllergens, setAvailableAllergens] = useState([])
 
-  useEffect(() => {
-    // Usar endpoint específico para ingredientes de recetas
-    apiFetch('/recipes/ingredients')
-      .then(res => {
-        const prods = res?.data ?? res
-        setProducts(Array.isArray(prods) ? prods : [])
-      })
-      .catch(() => setProducts([]))
-    
-    getAllergens(100)
-      .then(data => setAvailableAllergens(data))
-      .catch(() => setAvailableAllergens([]))
-  }, [])
+   console.log('Estado del componente:', { showAddAllergen, availableAllergens: availableAllergens.length, allergens: allergens.length })
+
+   useEffect(() => {
+     // Usar endpoint específico para ingredientes de recetas
+     apiFetch('/recipes/ingredients')
+       .then(res => {
+         const prods = res?.data ?? res
+         setProducts(Array.isArray(prods) ? prods : [])
+       })
+       .catch(() => setProducts([]))
+     
+     getAllergens(100)
+       .then(data => {
+         console.log('Alérgenos cargados:', data)
+         setAvailableAllergens(data)
+       })
+       .catch(err => {
+         console.error('Error cargando alérgenos:', err)
+         setAvailableAllergens([])
+       })
+   }, [])
 
   useEffect(() => {
     if (isCreate) {
@@ -183,6 +191,7 @@ export default function RecipeDetailPage() {
   // Agrupar alérgenos por categoría
   const allergensByCategory = useMemo(() => {
     const grouped = {}
+    console.log('Disponibles para agrupar:', availableAllergens)
     availableAllergens.forEach(allergen => {
       const category = allergen.category || 'Otros'
       if (!grouped[category]) {
@@ -190,6 +199,7 @@ export default function RecipeDetailPage() {
       }
       grouped[category].push(allergen)
     })
+    console.log('Alérgenos agrupados por categoría:', grouped)
     return grouped
   }, [availableAllergens])
 
@@ -560,24 +570,28 @@ export default function RecipeDetailPage() {
                   <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
 
                    <div className="space-y-4">
-                    <select
-                      onChange={e => {
-                        if (e.target.value) handleAddAllergen(e.target.value)
-                      }}
-                      className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                    >
-                      <option value="">Seleccionar alérgeno...</option>
-                      {Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
-                        <optgroup key={category} label={category}>
-                          {categoryAllergens
-                            .filter(a => !allergens.some(al => al.allergenName === a.name))
-                            .map(a => (
-                              <option key={a.id} value={a.id}>{a.name}</option>
-                            ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
+                     <select
+                       value=""
+                       onChange={e => {
+                         if (e.target.value) {
+                           handleAddAllergen(e.target.value)
+                           e.target.value = ""
+                         }
+                       }}
+                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                     >
+                       <option value="">Seleccionar alérgeno...</option>
+                       {Object.entries(allergensByCategory).map(([category, categoryAllergens]) => (
+                         <optgroup key={category} label={category}>
+                           {categoryAllergens
+                             .filter(a => !allergens.some(al => al.allergenName === a.name))
+                             .map(a => (
+                               <option key={a.id} value={a.id}>{a.name}</option>
+                             ))}
+                         </optgroup>
+                       ))}
+                     </select>
+                   </div>
 
                   <div className="flex justify-end gap-3 mt-6">
                     <button
