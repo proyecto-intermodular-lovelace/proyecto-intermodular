@@ -42,6 +42,9 @@ export class ImportJob {
   @Column({ type: 'uuid', name: 'created_by', nullable: true })
   createdBy: string | null;
 
+  @Column({ type: 'varchar', length: 20, name: 'default_product_type', nullable: true })
+  defaultProductType: string | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 }

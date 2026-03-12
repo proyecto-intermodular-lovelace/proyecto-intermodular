@@ -18,9 +18,22 @@ export const STATUS_COLORS = {
   CANCELLED: 'bg-red-100 text-red-800',
 }
 
+const STATUS_DESCRIPTIONS = {
+  DRAFT:     'Borrador: aún no se ha enviado. Puedes editar los productos y cantidades.',
+  SUBMITTED: 'Enviado: esperando revisión y aprobación del profesor.',
+  APPROVED:  'Aprobado: el profesor ha validado el pedido. Pendiente de consolidar por economato.',
+  MERGED:    'Consolidado: agrupado con otros pedidos para compra conjunta al proveedor.',
+  ORDERED:   'Pedido al proveedor: la compra se ha realizado y está en camino.',
+  RECEIVED:  'Recibido: el material ha llegado al economato.',
+  CANCELLED: 'Cancelado: este pedido fue rechazado o anulado.',
+}
+
 export function StatusBadge({ status }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700'}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-help ${STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700'}`}
+      title={STATUS_DESCRIPTIONS[status] ?? ''}
+    >
       {STATUS_LABELS[status] ?? status}
     </span>
   )

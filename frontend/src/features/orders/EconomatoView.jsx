@@ -4,10 +4,10 @@ import { getOrders, consolidateOrders, updateOrder, getProducts } from '../../se
 import { StatusBadge, STATUS_LABELS, formatDate, getMonday } from './orderUtils.jsx'
 
 const TABS = [
-  { key: 'SUBMITTED', label: 'Pendientes' },
-  { key: 'APPROVED', label: 'Por consolidar' },
-  { key: 'ORDERED',  label: 'Consolidados' },
-  { key: null,       label: 'Todos' },
+  { key: 'SUBMITTED', label: 'Pendientes',      title: 'Pedidos enviados por alumnos que aún no han sido aprobados por un profesor.' },
+  { key: 'APPROVED', label: 'Por consolidar',   title: 'Pedidos aprobados por profesores, listos para agrupar en una orden de compra.' },
+  { key: 'ORDERED',  label: 'Consolidados',     title: 'Pedidos ya consolidados: incluye los estados Pedido, Consolidado y Recibido.' },
+  { key: null,       label: 'Todos',             title: 'Todos los pedidos del sistema, sin filtro de estado.' },
 ]
 
 // Statuses that belong under the "Consolidados" tab
@@ -71,6 +71,7 @@ export default function EconomatoView() {
         {activeTab === 'APPROVED' && selectedIds.length > 0 && (
           <button
             onClick={() => setShowConsolidateModal(true)}
+            title="Agrupa los pedidos seleccionados en una sola orden de compra para el proveedor. Las cantidades se suman automáticamente."
             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <Layers size={16} />
@@ -98,6 +99,7 @@ export default function EconomatoView() {
           <button
             key={tab.key ?? 'all'}
             onClick={() => { setActiveTab(tab.key); setSelectedIds([]) }}
+            title={tab.title}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -423,6 +425,8 @@ function EditOrderModal({ order, onClose, onSaved }) {
       productId: it.productId,
       productName: it.product?.name ?? it.productId,
       unitType: it.product?.unitType ?? '',
+      stock: it.product?.stock ?? 0,
+      stockMinimo: it.product?.stockMinimo ?? 0,
       qtyRequested: Number(it.qtyRequested),
       qtyApproved: it.qtyApproved != null ? Number(it.qtyApproved) : '',
       notes: it.notes ?? '',
@@ -461,6 +465,8 @@ function EditOrderModal({ order, onClose, onSaved }) {
       productId: p.id,
       productName: p.name,
       unitType: p.unitType ?? '',
+      stock: p.stock ?? 0,
+      stockMinimo: p.stockMinimo ?? 0,
       qtyRequested: 1,
       qtyApproved: '',
       notes: '',
@@ -582,7 +588,10 @@ function EditOrderModal({ order, onClose, onSaved }) {
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 flex items-center justify-between"
                         >
                           <span className="font-medium text-gray-800">{p.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">{p.unitType} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}</span>
+                          <span className="text-xs text-gray-400 ml-2 flex items-center gap-2">
+                            {p.unitType} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}
+                            <span className={`font-semibold ${(p.stock ?? 0) <= (p.stockMinimo ?? 0) ? 'text-red-500' : 'text-emerald-600'}`}>Stock: {p.stock ?? 0}</span>
+                          </span>
                         </button>
                       ))
                     )}
@@ -602,7 +611,7 @@ function EditOrderModal({ order, onClose, onSaved }) {
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{item.productName}</p>
-                        <p className="text-xs text-gray-400">{item.unitType}</p>
+                        <p className="text-xs text-gray-400">{item.unitType} · <span className={item.stock <= item.stockMinimo ? 'text-red-500 font-semibold' : 'text-emerald-600 font-semibold'}>Stock: {item.stock ?? '—'}</span></p>
                       </div>
                       <button onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600 p-1">
                         <Trash2 size={14} />

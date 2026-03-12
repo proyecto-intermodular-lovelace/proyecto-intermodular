@@ -54,59 +54,79 @@ export class ProductsImportService {
     return { headers, rows };
   }
 
+  // Map of normalized header -> canonical field name.
+  // Covers English, Spanish, snake_case, camelCase and export-generated headers.
+  private static readonly HEADER_MAP: Record<string, string> = {
+    // code / sku
+    code: 'code', sku: 'code', codigo: 'code', código: 'code',
+    // name
+    name: 'name', nombre: 'name', product: 'name', producto: 'name',
+    // unitType
+    unittype: 'unitType', unit_type: 'unitType', unit: 'unitType', unidad: 'unitType',
+    // unitPrice
+    unitprice: 'unitPrice', unit_price: 'unitPrice', price: 'unitPrice', precio: 'unitPrice', cost: 'unitPrice', coste: 'unitPrice',
+    // description
+    description: 'description', descripcion: 'description', desc: 'description',
+    // stock
+    stock: 'stock', cantidad: 'stock', qty: 'stock',
+    // stockMinimo
+    stockminimo: 'stockMinimo', stock_minimo: 'stockMinimo', minstock: 'stockMinimo', min: 'stockMinimo',
+    // supplierId / supplier name
+    supplierid: 'supplierId', supplier_id: 'supplierId', supplier: 'supplierRaw', proveedor: 'supplierRaw',
+    // categoryId / category name
+    categoryid: 'categoryId', category_id: 'categoryId', category: 'categoryRaw', categoria: 'categoryRaw', cat: 'categoryRaw',
+    // productType
+    producttype: 'productType', product_type: 'productType', type: 'productType', tipo: 'productType',
+    // rendimiento (yield) — store but not critical
+    rendimiento: 'rendimiento', yield: 'rendimiento',
+    // activo — active flag
+    activo: 'activo', active: 'activo',
+  };
+
+  /** Normalize a header: trim, lower-case, strip accents, remove underscores/spaces for lookup */
+  private static normalizeHeader(h: string): string {
+    return h.trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip diacritics
+      .replace(/[\s_-]+/g, '');                          // strip separators
+  }
+
   buildDtoFromRow(headers: string[], row: string[]): Partial<CreateProductDto> {
     const dto: Partial<CreateProductDto> = {};
-    // keep raw category token for later resolution (name or numeric)
     (dto as any)._categoryRaw = undefined;
+    (dto as any)._supplierRaw = undefined;
+
     for (let i = 0; i < headers.length; i++) {
-      const key = headers[i];
+      const norm = ProductsImportService.normalizeHeader(headers[i]);
+      const field = ProductsImportService.HEADER_MAP[norm];
       const value = row[i] ?? '';
-      switch (key) {
-        case 'sku':
-        case 'code':
-          dto.code = value;
-          break;
-        case 'name':
-          dto.name = value;
-          break;
-        case 'unitType':
-        case 'unit_type':
-        case 'unit':
-        case 'unidad':
-          dto.unitType = value as any;
-          break;
-        case 'unitPrice':
-        case 'unit_price':
-        case 'price':
-        case 'precio':
-          dto.unitPrice = parseFloat(value) || 0;
-          break;
-        case 'description':
-          dto.description = value;
-          break;
-        case 'stock':
-          dto.stock = parseInt(value) || 0;
-          break;
-        case 'stockMinimo':
-        case 'stock_minimo':
-          dto.stockMinimo = value ? parseInt(value) : undefined;
-          break;
-        case 'supplierId':
-        case 'supplier_id':
-          dto.supplierId = isUUID(value) ? value : undefined;
+      if (!field || !value) continue;
+
+      switch (field) {
+        case 'code':        dto.code = value; break;
+        case 'name':        dto.name = value; break;
+        case 'unitType':    dto.unitType = value as any; break;
+        case 'unitPrice':   dto.unitPrice = parseFloat(value) || 0; break;
+        case 'description': dto.description = value; break;
+        case 'stock':       dto.stock = parseInt(value) || 0; break;
+        case 'stockMinimo': dto.stockMinimo = value ? parseInt(value) : undefined; break;
+        case 'supplierId':  dto.supplierId = isUUID(value) ? value : undefined; break;
+        case 'supplierRaw': // supplier by name — resolve later
+          if (isUUID(value)) dto.supplierId = value;
+          else (dto as any)._supplierRaw = value;
           break;
         case 'categoryId':
-        case 'category_id':
           if (isUUID(value)) dto.categoryId = value;
           else (dto as any)._categoryRaw = value;
           break;
-        case 'type':
-        case 'productType':
-          dto.productType = value as any;
+        case 'categoryRaw': // category by name — resolve later
+          if (isUUID(value)) dto.categoryId = value;
+          else (dto as any)._categoryRaw = value;
           break;
-        default:
-          // ignore unknown
-          break;
+        case 'productType': dto.productType = value as any; break;
+        // non-critical fields — store on dto for potential use
+        case 'rendimiento': (dto as any).rendimiento = value; break;
+        case 'activo':      (dto as any).activo = value; break;
+        default: break;
       }
     }
     return dto;
@@ -137,10 +157,11 @@ export class ProductsImportService {
 
   // Synchronous processing (prototype). Policy: 'skip' = skip existing, 'update' = update existing, 'create' = only create; default 'skip'
   // process in batches using transaction and upsert. createdByUuid will be used for created records when provided, otherwise fallback uuid
-  async process(buffer: Buffer, policy: 'skip' | 'update' | 'create' = 'skip', createdByUuid?: string) {
+  async process(buffer: Buffer, policy: 'skip' | 'update' | 'create' = 'skip', createdByUuid?: string, defaultProductType?: string) {
     const parsed = this.parseCsv(buffer);
     const results = { processed: 0, created: 0, updated: 0, errors: [] as any[] };
     const rows = parsed.rows;
+    const fallbackType = defaultProductType === 'MATERIAL' ? 'MATERIAL' : 'INGREDIENT';
 
     // Normalize rows into DTOs
     const dtos: Array<{ dto: any; rowNumber: number }> = [];
@@ -159,7 +180,7 @@ export class ProductsImportService {
       data.stockMinimo = data.stockMinimo ?? null;
       data.supplierId = data.supplierId ?? null;
       data.categoryId = data.categoryId ?? null;
-      data.productType = data.productType || 'INGREDIENT';
+      data.productType = data.productType || fallbackType;
       dtos.push({ dto: data, rowNumber: i + 1 });
     }
 
@@ -175,27 +196,37 @@ export class ProductsImportService {
         const raw = (r.dto as any)._categoryRaw;
         if (raw && !r.dto.categoryId) {
           const rawTrim = String(raw).trim();
-          // handle numeric shortcuts: 1 -> Ingredientes, 2 -> Materiales
           if (/^1$/.test(rawTrim)) {
             r.dto.categoryId = 'bbbbbbbb-0000-0000-0000-000000000001';
           } else if (/^2$/.test(rawTrim)) {
             r.dto.categoryId = 'bbbbbbbb-0000-0000-0000-000000000002';
           } else {
-            // try to find by name (case-insensitive)
             try {
               const found = await queryRunner.manager.query(
                 `SELECT id FROM categories WHERE lower(name) = lower($1) LIMIT 1`,
                 [rawTrim],
               );
               if (found && found.length > 0) r.dto.categoryId = found[0].id;
-            } catch (e) {
-              // ignore resolution errors and leave categoryId null
-            }
+            } catch (_) { /* ignore */ }
           }
-          // fallback: if still null, assign default 'Ingredientes' category
           if (!r.dto.categoryId) {
             r.dto.categoryId = 'bbbbbbbb-0000-0000-0000-000000000001';
           }
+        }
+      }
+
+      // resolve supplier lookups for dtos that had supplier name instead of UUID
+      for (const r of dtos) {
+        const rawSup = (r.dto as any)._supplierRaw;
+        if (rawSup && !r.dto.supplierId) {
+          const supTrim = String(rawSup).trim();
+          try {
+            const found = await queryRunner.manager.query(
+              `SELECT id FROM suppliers WHERE lower(name) = lower($1) LIMIT 1`,
+              [supTrim],
+            );
+            if (found && found.length > 0) r.dto.supplierId = found[0].id;
+          } catch (_) { /* ignore */ }
         }
       }
 

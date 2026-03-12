@@ -42,9 +42,10 @@ export class ProductsImportController {
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @Post('process')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  async process(@Req() req: any, @UploadedFile() file: any, @Body('policy') policy?: string) {
+  async process(@Req() req: any, @UploadedFile() file: any, @Body('policy') policy?: string, @Body('defaultProductType') defaultProductType?: string) {
     if (!file || !file.buffer) throw new BadRequestException('file is required');
     const pol = (policy as any) === 'update' ? 'update' : (policy as any) === 'create' ? 'create' : 'skip';
+    const prodType = defaultProductType === 'MATERIAL' ? 'MATERIAL' : defaultProductType === 'INGREDIENT' ? 'INGREDIENT' : undefined;
     // enqueue background job when worker available; otherwise fall back to synchronous processing
     try {
       const appModule = (global as any).__nestAppRef;
@@ -56,7 +57,7 @@ export class ProductsImportController {
         if (worker && worker.enqueue) {
           const content = file.buffer.toString('utf8');
           const createdBy = req?.user?.userId || null;
-          const job = await worker.enqueue(file.originalname || 'import.csv', content, createdBy);
+          const job = await worker.enqueue(file.originalname || 'import.csv', content, createdBy, prodType);
           return { jobId: job.id };
         }
       }
@@ -66,7 +67,7 @@ export class ProductsImportController {
 
     // fallback: synchronous processing
     const createdBy = req?.user?.userId || undefined;
-    return this.importService.process(file.buffer, pol as any, createdBy);
+    return this.importService.process(file.buffer, pol as any, createdBy, prodType);
   }
 
   @ApiBearerAuth('jwt')

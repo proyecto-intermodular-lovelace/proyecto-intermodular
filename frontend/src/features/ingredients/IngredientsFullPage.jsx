@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus, Edit, Trash2, ArrowLeft, Download, AlertTriangle, Eye } from 'lucide-react'
-import { Card, Button, Input } from '../../components/ui'
+import { Card, Button, Input, Tooltip } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { mockProducts } from '../../services/products.mock'
 import { getIngredients } from '../../services/products.service'
@@ -142,9 +142,10 @@ export default function IngredientsFullPage() {
         if (dataToExport.length === 0) return
 
         // Build CSV
-        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo']
+        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo', 'tipo']
         const header = keys.join(',')
         const rows = dataToExport.map(p => keys.map(k => {
+            if (k === 'tipo') return '"INGREDIENT"'
             const v = p[k]
             if (typeof v === 'string') return `"${String(v).replace(/"/g, '""')}"`
             return String(v)
@@ -327,7 +328,10 @@ export default function IngredientsFullPage() {
 
                                 {/* SKU */}
                                 <div className="col-span-12 sm:col-span-6">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        SKU
+                                        <Tooltip text="Stock Keeping Unit — código único que identifica este producto en el inventario (ej: ING-0001)." asIcon />
+                                    </label>
                                     <input
                                         type="text"
                                         value={editProduct.sku || ''}
@@ -377,7 +381,10 @@ export default function IngredientsFullPage() {
 
                                 {/* Stock Mínimo */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Stock Mínimo
+                                        <Tooltip text="Cantidad mínima de seguridad. Cuando el stock actual baja de este valor, el producto se marca en rojo como 'stock crítico'." asIcon />
+                                    </label>
                                     <input
                                         type="number"
                                         value={editProduct.stockMinimo ?? 0}
@@ -388,7 +395,10 @@ export default function IngredientsFullPage() {
 
                                 {/* Rendimiento */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento (%)</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Rendimiento (%)
+                                        <Tooltip text="Porcentaje de producto aprovechable tras mermas. Ej: 80% significa que de 1 kg bruto se aprovechan 800 g." asIcon />
+                                    </label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -434,6 +444,7 @@ export default function IngredientsFullPage() {
                                             className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded"
                                         />
                                         <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                        <Tooltip text="Los productos inactivos no aparecen en los pedidos de alumnos ni en las listas de selección." asIcon />
                                     </label>
                                 </div>
 
@@ -467,10 +478,12 @@ export default function IngredientsFullPage() {
                 </button>
 
                 {lowStockCount > 0 && (
-                    <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
+                    <Tooltip text="Productos cuyo stock actual está por debajo del mínimo configurado. Revisa la lista para reponer existencias.">
+                      <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
                         <AlertTriangle className="w-5 h-5 short:w-4 short:h-4" />
                         <span className="text-sm font-semibold short:text-xs">{lowStockCount} productos con stock crítico</span>
-                    </div>
+                      </div>
+                    </Tooltip>
                 )}
             </div>
 
@@ -566,6 +579,7 @@ export default function IngredientsFullPage() {
                                     className="w-4 h-4 text-cifp-red focus:ring-cifp-red border-gray-300 rounded short:w-3 short:h-3"
                                 />
                                 <span className="text-sm font-medium text-cifp-neutral-700 short:text-[10px] whitespace-nowrap">Stock crítico</span>
+                                <Tooltip text="Filtra solo productos cuyo stock actual está por debajo de su stock mínimo. Estos productos necesitan reposición." asIcon />
                             </label>
                         </div>
                     </div>
@@ -728,14 +742,16 @@ export default function IngredientsFullPage() {
                     </div>
 
                     <div className="flex items-center gap-3 short:gap-2">
-                        <Button
+                        <Tooltip text="Exporta los productos visibles (o seleccionados) a un archivo CSV que podrás editar y re-importar.">
+                          <Button
                             variant="secondary"
                             onClick={handleExportCSV}
                             className="gap-2 short:h-8 short:text-xs short:px-2"
-                        >
+                          >
                             <Download className="w-4 h-4 short:w-3 short:h-3" />
                             Exportar CSV
-                        </Button>
+                          </Button>
+                        </Tooltip>
                     </div>
                 </div>
             </Card>

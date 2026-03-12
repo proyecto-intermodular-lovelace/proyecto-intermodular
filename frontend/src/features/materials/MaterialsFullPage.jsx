@@ -4,7 +4,7 @@ import {
     Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus,
     Edit, Trash2, ArrowLeft, Download, AlertTriangle, ClipboardList, Eye
 } from 'lucide-react'
-import { Card, Button, Input } from '../../components/ui'
+import { Card, Button, Input, Tooltip } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { mockProducts, FOOD_CATEGORIES } from '../../services/products.mock'
 import { getMaterials } from '../../services/products.service'
@@ -120,10 +120,11 @@ export default function MaterialsFullPage() {
 
         if (dataToExport.length === 0) return
 
-        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo']
+        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo', 'tipo']
         const header = keys.join(',')
         const rows = dataToExport.map(p =>
             keys.map(k => {
+                if (k === 'tipo') return '"MATERIAL"'
                 const v = p[k]
                 if (typeof v === 'string') return `"${String(v).replace(/"/g, '""')}"`
                 return String(v)
@@ -317,7 +318,10 @@ export default function MaterialsFullPage() {
 
                                 {/* SKU */}
                                 <div className="col-span-12 sm:col-span-6">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        SKU
+                                        <Tooltip text="Stock Keeping Unit — código único que identifica este material en el inventario (ej: MAT-0001)." asIcon />
+                                    </label>
                                     <input type="text" value={detailForm.sku} onChange={e => handleDetailChange('sku', e.target.value)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-mono text-gray-800"
                                         placeholder="MAT-0001" />
@@ -350,14 +354,20 @@ export default function MaterialsFullPage() {
 
                                 {/* Stock Mínimo */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Stock Mínimo
+                                        <Tooltip text="Cantidad mínima de seguridad. Cuando el stock baja de este valor, el material se marca como 'stock crítico' en rojo." asIcon />
+                                    </label>
                                     <input type="number" value={detailForm.stockMinimo} onChange={e => handleDetailChange('stockMinimo', parseInt(e.target.value, 10) || 0)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-gray-50 border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
                                 </div>
 
                                 {/* Rendimiento */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Rendimiento
+                                        <Tooltip text="Factor de aprovechamiento del material. Para materiales no perecederos suele ser 1.0 (100% aprovechable)." asIcon />
+                                    </label>
                                     <input type="number" step="0.001" value={detailForm.rendimiento} onChange={e => handleDetailChange('rendimiento', parseFloat(e.target.value) || 0)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
                                 </div>
@@ -388,6 +398,7 @@ export default function MaterialsFullPage() {
                                         <input type="checkbox" checked={detailForm.activo} onChange={e => handleDetailChange('activo', e.target.checked)} disabled={detailMode === 'view'}
                                             className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded" />
                                         <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                        <Tooltip text="Los materiales inactivos no aparecen en los pedidos ni en las listas de selección." asIcon />
                                     </label>
                                 </div>
                             </div>
@@ -421,10 +432,12 @@ export default function MaterialsFullPage() {
                 </button>
 
                 {lowStockCount > 0 && (
-                    <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
+                    <Tooltip text="Materiales cuyo stock actual está por debajo del mínimo configurado. Revisa la lista para reponer existencias.">
+                      <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
                         <AlertTriangle className="w-5 h-5 short:w-4 short:h-4" />
                         <span className="text-sm font-semibold short:text-xs">{lowStockCount} materiales con stock crítico</span>
-                    </div>
+                      </div>
+                    </Tooltip>
                 )}
             </div>
 
@@ -507,6 +520,7 @@ export default function MaterialsFullPage() {
                                     className="w-4 h-4 text-cifp-red focus:ring-cifp-red border-gray-300 rounded short:w-3 short:h-3"
                                 />
                                 <span className="text-sm font-medium text-cifp-neutral-700 short:text-xs">Solo stock crítico</span>
+                                <Tooltip text="Filtra solo materiales cuyo stock está por debajo del mínimo. Estos necesitan reposición." asIcon />
                             </label>
                         </div>
                     </div>
@@ -637,14 +651,16 @@ export default function MaterialsFullPage() {
                     </div>
 
                     <div className="flex items-center gap-3 short:gap-2">
-                        <Button
+                        <Tooltip text="Exporta los materiales visibles (o seleccionados) a un archivo CSV que podrás editar y re-importar.">
+                          <Button
                             variant="secondary"
                             onClick={handleExportCSV}
                             className="gap-2 short:h-8 short:text-xs short:px-2"
-                        >
+                          >
                             <Download className="w-4 h-4 short:w-3 short:h-3" />
                             Exportar CSV
-                        </Button>
+                          </Button>
+                        </Tooltip>
                     </div>
                 </div>
             </Card>

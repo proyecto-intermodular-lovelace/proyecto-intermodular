@@ -209,8 +209,8 @@ function OrderCard({ order, expanded, onToggle, onSubmit, onCancel, actionLoadin
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-200">
                   <th className="text-left pb-2 font-medium">Producto</th>
-                  <th className="text-right pb-2 font-medium">Cant. solicitada</th>
-                  <th className="text-right pb-2 font-medium">Cant. aprobada</th>
+                  <th className="text-right pb-2 font-medium" title="La cantidad que solicitaste en tu pedido original.">Cant. solicitada</th>
+                  <th className="text-right pb-2 font-medium" title="La cantidad que el profesor ha aprobado. Puede ser menor si ajustó tu solicitud.">Cant. aprobada</th>
                   <th className="text-left pb-2 font-medium pl-4">Notas</th>
                 </tr>
               </thead>
@@ -277,6 +277,8 @@ function CreateOrderModal({ onClose, onCreated }) {
       productId: p.id,
       productName: p.name,
       unitType: p.unitType ?? p.unit_type ?? '',
+      stock: p.stock ?? 0,
+      stockMinimo: p.stockMinimo ?? 0,
       qtyRequested: 1,
       notes: '',
     }])
@@ -343,6 +345,7 @@ function CreateOrderModal({ onClose, onCreated }) {
               value={weekStart}
               onChange={e => setWeekStart(getMonday(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Selecciona cualquier día; se ajustará automáticamente al lunes de esa semana."
             />
             <p className="text-xs text-gray-400 mt-1">La fecha se ajusta automáticamente al lunes de esa semana</p>
           </div>
@@ -397,7 +400,13 @@ function CreateOrderModal({ onClose, onCreated }) {
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 flex items-center justify-between"
                         >
                           <span className="font-medium text-gray-800">{p.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">{p.unitType ?? p.unit_type} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}</span>
+                          <span className="text-xs text-gray-400 ml-2 flex items-center gap-2">
+                            {p.unitType ?? p.unit_type} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}
+                            <span
+                              className={`font-semibold ${(p.stock ?? 0) <= (p.stockMinimo ?? 0) ? 'text-red-500' : 'text-emerald-600'}`}
+                              title={(p.stock ?? 0) <= (p.stockMinimo ?? 0) ? 'Stock crítico: por debajo del mínimo. Puede haber retrasos.' : 'Stock disponible en almacén.'}
+                            >Stock: {p.stock ?? 0}</span>
+                          </span>
                         </button>
                       ))
                     )}
@@ -416,7 +425,7 @@ function CreateOrderModal({ onClose, onCreated }) {
                   <div key={item.productId} className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
-                      <p className="text-xs text-gray-400">{item.unitType}</p>
+                      <p className="text-xs text-gray-400">{item.unitType} · <span className={item.stock <= item.stockMinimo ? 'text-red-500 font-semibold' : 'text-emerald-600 font-semibold'}>Stock: {item.stock}</span></p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <input
@@ -456,6 +465,7 @@ function CreateOrderModal({ onClose, onCreated }) {
           <button
             onClick={handleSave}
             disabled={saving}
+            title="Guarda el pedido como borrador. Podrás añadir más productos y enviarlo al profesor cuando esté listo."
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar borrador'}

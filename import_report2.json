@@ -1,5 +1,0 @@
-[
-  {
-    "error": "insert or update on table \"products\" violates foreign key constraint \"products_created_by_fkey\""
-  }
-]

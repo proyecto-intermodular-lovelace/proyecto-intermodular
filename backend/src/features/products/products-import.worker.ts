@@ -54,7 +54,7 @@ export class ImportWorkerService implements OnModuleInit, OnModuleDestroy {
     try {
       const buffer = Buffer.from(job.content, 'utf8');
       // use importService.process but capture errors per row
-      const res = await this.importService.process(buffer, 'update', job.createdBy || undefined);
+      const res = await this.importService.process(buffer, 'update', job.createdBy || undefined, job.defaultProductType || undefined);
       job.processed = res.processed;
       job.createdCount = res.created || 0;
       job.updatedCount = res.updated || 0;
@@ -82,7 +82,7 @@ export class ImportWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   // Public helper: enqueue job
-  async enqueue(filename: string, content: string, createdBy?: string) {
+  async enqueue(filename: string, content: string, createdBy?: string, defaultProductType?: string) {
     const job = this.jobsRepo.create({
       filename,
       content,
@@ -94,6 +94,7 @@ export class ImportWorkerService implements OnModuleInit, OnModuleDestroy {
       errors: [],
       resultPath: null,
       createdBy: createdBy || null,
+      defaultProductType: defaultProductType || null,
     });
     return this.jobsRepo.save(job);
   }

@@ -1,0 +1,5 @@
+[
+  {
+    "error": "null value in column \"category_id\" of relation \"products\" violates not-null constraint"
+  }
+]
