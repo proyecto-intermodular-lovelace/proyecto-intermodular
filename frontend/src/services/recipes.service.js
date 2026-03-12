@@ -94,5 +94,44 @@ export async function addRecipeItem(recipeId, payload) {
  * @returns {Promise<Object>} Receta actualizada
  */
 export async function deleteRecipeItem(recipeId, itemId) {
-    return apiFetch(`/recipes/${recipeId}/items/${itemId}`, { method: 'DELETE' })
+  return apiFetch(`/recipes/${recipeId}/items/${itemId}`, { method: 'DELETE' })
+}
+
+/**
+ * Obtiene los alérgenos disponibles del sistema.
+ * @param {number} limit - máx registros (default 100)
+ * @returns {Promise<Array>} Array de alérgenos
+ */
+export async function getAllergens(limit = 100) {
+  try {
+    const res = await apiFetch(`/allergens?limit=${limit}`)
+    const items = res?.data ?? res
+    return Array.isArray(items) ? items : []
+  } catch (err) {
+    console.error('Error fetching allergens:', err)
+    return []
+  }
+}
+
+/**
+ * Agrega un alérgeno a una receta.
+ * @param {string} recipeId - UUID de la receta
+ * @param {string} allergenId - UUID del alérgeno
+ * @returns {Promise<Object>} Receta actualizada
+ */
+export async function addRecipeAllergen(recipeId, allergenId) {
+  return apiFetch(`/recipes/${recipeId}/allergens`, {
+    method: 'POST',
+    body: JSON.stringify({ allergenId }),
+  })
+}
+
+/**
+ * Elimina un alérgeno de una receta.
+ * @param {string} recipeId - UUID de la receta
+ * @param {string} allergenId - UUID del alérgeno
+ * @returns {Promise<void>}
+ */
+export async function deleteRecipeAllergen(recipeId, allergenId) {
+  return apiFetch(`/recipes/${recipeId}/allergens/${allergenId}`, { method: 'DELETE' })
 }

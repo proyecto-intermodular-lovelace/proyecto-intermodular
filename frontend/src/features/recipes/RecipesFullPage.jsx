@@ -17,6 +17,8 @@ export default function RecipesFullPage() {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [selectedIds, setSelectedIds] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   // Create / Edit state
   const [showForm, setShowForm] = useState(false)
@@ -141,15 +143,30 @@ export default function RecipesFullPage() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar esta receta? Se borrarán también sus ingredientes y alérgenos.')) return
+  const handleDelete = (id) => {
+    setDeleteTarget(id)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
     try {
-      await apiFetch(`/recipes/${id}`, { method: 'DELETE' })
+      await apiFetch(`/recipes/${deleteTarget}`, { method: 'DELETE' })
       fetchRecipes()
-      setSelectedIds(selectedIds.filter(sid => sid !== id))
+      setSelectedIds(selectedIds.filter(sid => sid !== deleteTarget))
+      setShowDeleteModal(false)
+      setDeleteTarget(null)
     } catch (err) {
       alert(err?.body?.message || err.message || 'Error al eliminar')
     }
+  }
+
+  const handleResetFilters = () => {
+    setSearch('')
+    setDifficultyFilter('all')
+    setSortColumn(null)
+    setSortDirection('asc')
+    setSelectedIds([])
   }
 
   const handleSelectAll = (e) => {
@@ -273,6 +290,15 @@ export default function RecipesFullPage() {
               <option value="MEDIA">Medias</option>
               <option value="DIFICIL">Difíciles</option>
             </select>
+            {(search || difficultyFilter !== 'all' || sortColumn) && (
+              <button
+                onClick={handleResetFilters}
+                className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-2 transition-colors"
+                title="Limpiar filtros"
+              >
+                ↺ Reset
+              </button>
+            )}
           </div>
           {selectedIds.length > 0 && (
             <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg">
@@ -340,6 +366,7 @@ export default function RecipesFullPage() {
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Tiempos</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Alérgenos</th>
                   {isAdmin && <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Acciones</th>}
                 </tr>
               </thead>
@@ -381,6 +408,18 @@ export default function RecipesFullPage() {
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {recipe.prepTime}m + {recipe.cookTime}m
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      {recipe.allergens && recipe.allergens.length > 0 ? (
+                        <span 
+                          title={recipe.allergens.map(a => a.name).join(', ')}
+                          className="text-red-500 text-lg hover:bg-red-50 rounded px-2 py-1 cursor-help"
+                        >
+                          ⚠️
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
@@ -408,6 +447,32 @@ export default function RecipesFullPage() {
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+            <p className="text-sm text-cifp-neutral-700 mb-4">
+              ¿Eliminar esta receta? Se borrarán también sus ingredientes y alérgenos. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteTarget(null) }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Modal */}
       {showForm && (

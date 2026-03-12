@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Save, ArrowLeft, AlertTriangle, Edit, X, Check, Trash2, Plus, Package } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthProvider'
 import { Card } from '../../components/ui'
-import { getRecipeById, createRecipe, updateRecipe, addRecipeItem, deleteRecipeItem } from '../../services/recipes.service'
+import { getRecipeById, createRecipe, updateRecipe, addRecipeItem, deleteRecipeItem, getAllergens, addRecipeAllergen, deleteRecipeAllergen } from '../../services/recipes.service'
 import apiFetch from '../../services/api'
 
 const EMPTY_RECIPE = {
@@ -38,6 +38,10 @@ export default function RecipeDetailPage() {
   const [selectedProductId, setSelectedProductId] = useState('')
   const [selectedQuantity, setSelectedQuantity] = useState('')
 
+  // Add allergen modal
+  const [showAddAllergen, setShowAddAllergen] = useState(false)
+  const [availableAllergens, setAvailableAllergens] = useState([])
+
   useEffect(() => {
     apiFetch('/products?limit=1000')
       .then(res => {
@@ -45,6 +49,10 @@ export default function RecipeDetailPage() {
         setProducts(Array.isArray(prods) ? prods : [])
       })
       .catch(() => setProducts([]))
+    
+    getAllergens(100)
+      .then(data => setAvailableAllergens(data))
+      .catch(() => setAvailableAllergens([]))
   }, [])
 
   useEffect(() => {
@@ -133,6 +141,35 @@ export default function RecipeDetailPage() {
       if (data) setItems(data.items || [])
     } catch (err) {
       alert(err?.body?.message || err.message || 'Error al eliminar')
+    }
+  }
+
+  const handleAddAllergen = async (allergenId) => {
+    if (!allergenId) return
+    setSaving(true)
+    try {
+      await addRecipeAllergen(id, allergenId)
+      const data = await getRecipeById(id)
+      if (data) setAllergens(data.allergens || [])
+      setShowAddAllergen(false)
+    } catch (err) {
+      alert(err?.body?.message || err.message || 'Error al agregar alérgeno')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteAllergen = async (allergenId) => {
+    if (!confirm('¿Eliminar este alérgeno?')) return
+    setSaving(true)
+    try {
+      await deleteRecipeAllergen(id, allergenId)
+      const data = await getRecipeById(id)
+      if (data) setAllergens(data.allergens || [])
+    } catch (err) {
+      alert(err?.body?.message || err.message || 'Error al eliminar alérgeno')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -404,61 +441,135 @@ export default function RecipeDetailPage() {
             </div>
           </Card>
 
-          {/* Add Item Modal */}
-          {showAddItem && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Ingrediente</h2>
+           {/* Alérgenos */}
+           <div className="mt-4 md:mt-6 flex items-center justify-between">
+             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+               <AlertTriangle className="w-5 h-5 text-red-500" /> Alérgenos
+             </h2>
+             {isAdmin && (
+               <button
+                 type="button"
+                 onClick={() => setShowAddAllergen(true)}
+                 className="text-xs text-cifp-blue hover:underline flex items-center gap-1"
+               >
+                 <Plus className="w-3 h-3" /> Agregar alérgeno
+               </button>
+             )}
+           </div>
 
-                <form onSubmit={handleAddItem} className="space-y-4">
-                  <div>
-                    <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Producto *</label>
-                    <select
-                      value={selectedProductId}
-                      onChange={e => setSelectedProductId(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                    >
-                      <option value="">Seleccionar...</option>
-                      {products.filter(p => p.productType === 'INGREDIENT').map(p => (
-                        <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
-                      ))}
-                    </select>
-                  </div>
+           {allergens.length > 0 ? (
+             <div className="mt-2 flex flex-wrap gap-2">
+               {allergens.map(a => (
+                 <div key={a.id} className="bg-red-50 border border-red-200 rounded-lg px-3 py-1 flex items-center gap-2">
+                   <span className="text-sm font-medium text-red-800">{a.name}</span>
+                   {isAdmin && (
+                     <button
+                       type="button"
+                       onClick={() => handleDeleteAllergen(a.id)}
+                       className="text-red-500 hover:text-red-700 transition-colors"
+                     >
+                       <X className="w-3 h-3" />
+                     </button>
+                   )}
+                 </div>
+               ))}
+             </div>
+           ) : (
+             <div className="mt-2 p-4 text-center text-gray-400 text-sm border rounded-lg bg-gray-50">
+               Sin alérgenos registrados
+             </div>
+           )}
 
-                  <div>
-                    <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Cantidad *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={selectedQuantity}
-                      onChange={e => setSelectedQuantity(e.target.value)}
-                      placeholder="Ej: 500"
-                      className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
-                    />
-                  </div>
+           {/* Add Item Modal */}
+           {showAddItem && (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
+               <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+                 <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Ingrediente</h2>
 
-                  <div className="flex justify-end gap-3 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddItem(false)}
-                      className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={saving || !selectedProductId || !selectedQuantity}
-                      className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white bg-cifp-blue rounded-lg hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
-                    >
-                      <Check className="w-4 h-4" /> {saving ? 'Agregando...' : 'Agregar'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
+                 <form onSubmit={handleAddItem} className="space-y-4">
+                   <div>
+                     <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Producto *</label>
+                     <select
+                       value={selectedProductId}
+                       onChange={e => setSelectedProductId(e.target.value)}
+                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                     >
+                       <option value="">Seleccionar...</option>
+                       {products.filter(p => p.productType === 'INGREDIENT').map(p => (
+                         <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+                       ))}
+                     </select>
+                   </div>
+
+                   <div>
+                     <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Cantidad *</label>
+                     <input
+                       type="number"
+                       step="0.01"
+                       value={selectedQuantity}
+                       onChange={e => setSelectedQuantity(e.target.value)}
+                       placeholder="Ej: 500"
+                       className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                     />
+                   </div>
+
+                   <div className="flex justify-end gap-3 mt-6">
+                     <button
+                       type="button"
+                       onClick={() => setShowAddItem(false)}
+                       className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                     >
+                       <X className="w-4 h-4" /> Cancelar
+                     </button>
+                     <button
+                       type="submit"
+                       disabled={saving || !selectedProductId || !selectedQuantity}
+                       className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-white bg-cifp-blue rounded-lg hover:bg-cifp-blue-dark transition-colors disabled:opacity-60"
+                     >
+                       <Check className="w-4 h-4" /> {saving ? 'Agregando...' : 'Agregar'}
+                     </button>
+                   </div>
+                 </form>
+               </div>
+             </div>
+           )}
+
+           {/* Add Allergen Modal */}
+           {showAddAllergen && (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddAllergen(false)}>
+               <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+                 <h2 className="text-lg font-bold text-gray-800 mb-4">Agregar Alérgeno</h2>
+
+                 <div className="space-y-4">
+                   <select
+                     onChange={e => {
+                       if (e.target.value) handleAddAllergen(e.target.value)
+                     }}
+                     className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                   >
+                     <option value="">Seleccionar alérgeno...</option>
+                     {availableAllergens
+                       .filter(a => !allergens.some(al => al.id === a.id))
+                       .map(a => (
+                         <option key={a.id} value={a.id}>{a.name}</option>
+                       ))}
+                   </select>
+                 </div>
+
+                 <div className="flex justify-end gap-3 mt-6">
+                   <button
+                     type="button"
+                     onClick={() => setShowAddAllergen(false)}
+                     className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                   >
+                     <X className="w-4 h-4" /> Cancelar
+                   </button>
+                 </div>
+               </div>
+             </div>
+           )}
+         </>
+       )}
+     </div>
+   )
+ }
