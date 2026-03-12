@@ -501,7 +501,7 @@ export default function RecipeDetailPage() {
                         className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
                       >
                         <option value="">Seleccionar...</option>
-                        {products.filter(p => p.productType === 'INGREDIENT').map(p => (
+                        {products.map(p => (
                           <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
                         ))}
                       </select>
