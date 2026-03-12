@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, ClipboardList, Tags, Truck, Heart, Repeat, FileText, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
+import { Box, ClipboardList, Tags, Truck, Heart, Repeat, ChefHat, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 const ITEMS = [
@@ -7,7 +7,7 @@ const ITEMS = [
   { to: '/products/import',label: 'Importar',      icon: FileText,     bg: 'bg-amber-50', color: 'text-amber-600', ring: 'ring-amber-200', desc: 'Importar productos desde CSV' },
   { to: '/inventory',      label: 'Materiales',    icon: ClipboardList, bg: 'bg-green-50',  color: 'text-green-600',  ring: 'ring-green-200',  desc: 'Gestión de materiales y equipamiento: stock actual, entradas y salidas de almacén.' },
   { to: '/categories',     label: 'Categorías',    icon: Tags,          bg: 'bg-teal-50',   color: 'text-teal-600',   ring: 'ring-teal-200',   desc: 'Gestión de categorías de ingredientes y materiales para clasificar productos.' },
-  { to: '/recipes',        label: 'Recetas',       icon: FileText,      bg: 'bg-amber-50',  color: 'text-amber-600',  ring: 'ring-amber-200',  desc: 'Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos.' },
+  { to: '/recipes',        label: 'Recetas',       icon: ChefHat,       bg: 'bg-orange-50', color: 'text-orange-600', ring: 'ring-orange-200', desc: 'Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos.' },
   { to: '/returns',        label: 'Bajas / Dev.',  icon: Archive,       bg: 'bg-pink-50',   color: 'text-pink-600',   ring: 'ring-pink-200',   desc: 'Registro de bajas por caducidad o rotura y devoluciones a proveedores.' },
   { to: '/orders',         label: 'Pedidos',       icon: Truck,         bg: 'bg-blue-50',   color: 'text-blue-600',   ring: 'ring-blue-200',   desc: 'Solicitudes de pedido por clase, revisión docente y consolidado semanal del economato.' },
   { to: '/delivery-notes', label: 'Albaranes',     icon: Repeat,        bg: 'bg-red-50',    color: 'text-red-600',    ring: 'ring-red-200',    desc: 'Registro y validación de albaranes de entrega recibidos de los proveedores.' },

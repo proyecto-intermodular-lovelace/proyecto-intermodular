@@ -17,6 +17,9 @@ import ReturnsPage from '../features/returns/ReturnsPage'
 import OrdersPage from '../features/orders/OrdersPage'
 import DeliveryNotesPage from '../features/delivery-notes/DeliveryNotesPage'
 import CategoriesPage from '../features/categories/CategoriesPage'
+import RecipesSummaryPage from '../features/recipes/RecipesSummaryPage'
+import RecipesFullPage from '../features/recipes/RecipesFullPage'
+import RecipeDetailPage from '../features/recipes/RecipeDetailPage'
 import MainLayout from '../layouts/MainLayout'
 import RequireAuth from '../components/RequireAuth'
 import RecoverPage from '../features/auth/RecoverPage'
@@ -64,6 +67,12 @@ function AppRouter() {
 
                 {/* Categorías */}
                 <Route path="categories" element={<CategoriesPage />} />
+
+                {/* Recetas */}
+                <Route path="recipes" element={<RecipesSummaryPage />} />
+                <Route path="recipes/full" element={<RecipesFullPage />} />
+                <Route path="recipes/new" element={<RecipeDetailPage />} />
+                <Route path="recipes/:id" element={<RecipeDetailPage />} />
 
                 <Route path="profile" element={<ProfilePage />} />
             </Route>

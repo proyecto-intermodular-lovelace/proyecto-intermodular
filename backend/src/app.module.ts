@@ -11,6 +11,8 @@ import { InventoryModule } from './features/inventory/inventory.module';
 import { SuppliersModule } from './features/suppliers/suppliers.module';
 import { ScaleModule } from './features/scale/scale.module';
 import { CategoriesModule } from './features/categories/categories.module';
+import { RecipesModule } from './features/recipes/recipes.module';
+import { AllergensModule } from './features/allergens/allergens.module';
 import { HttpLoggingMiddleware } from './common/logger/http-logging.middleware';
 import { CustomLogger } from './common/logger/custom.logger';
 
@@ -45,6 +47,8 @@ import { CustomLogger } from './common/logger/custom.logger';
     SuppliersModule,
     ScaleModule,
     CategoriesModule,
+    RecipesModule,
+    AllergensModule,
   ],
   providers: [CustomLogger],
   exports: [CustomLogger],

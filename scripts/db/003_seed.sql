@@ -54,10 +54,8 @@ ON CONFLICT (email) DO NOTHING;
 -- ============================================================
 -- PROVEEDORES
 -- ============================================================
-INSERT INTO public.suppliers (id, name, is_active)
-VALUES
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'Proveedor General', true)
-ON CONFLICT (name) DO NOTHING;
+-- Note: Suppliers table is already populated by 002_suppliers.sql
+-- Skipping additional supplier inserts to avoid conflicts
 
 -- ============================================================
 -- CATEGORÍAS
