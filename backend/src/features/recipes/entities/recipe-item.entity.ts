@@ -19,7 +19,6 @@ export class RecipeItem {
 
   @ManyToOne(() => Recipe, (recipe) => recipe.items, {
     onDelete: 'CASCADE',
-    eager: true,
   })
   @JoinColumn({ name: 'recipe_id' })
   recipe: Recipe;
@@ -27,7 +26,7 @@ export class RecipeItem {
   @Column({ type: 'uuid', name: 'product_id' })
   productId: string;
 
-  @ManyToOne(() => Product, { eager: true })
+  @ManyToOne(() => Product)
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
