@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Download, ArrowLeft } from 'lucide-react'
+import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Download, ArrowLeft, Eye } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { getRecipes } from '../../services/recipes.service'
@@ -32,7 +32,18 @@ export default function RecipesFullPage() {
   const [formYieldUnit, setFormYieldUnit] = useState('porciones')
   const [formPrepTime, setFormPrepTime] = useState(0)
   const [formCookTime, setFormCookTime] = useState(0)
+  const [formCategoryName, setFormCategoryName] = useState('')
+  const [formRestaurantName, setFormRestaurantName] = useState('')
+  const [formPublicSalePrice, setFormPublicSalePrice] = useState(0)
+  const [formTaxPercent, setFormTaxPercent] = useState(10)
+  const [formServiceTemperature, setFormServiceTemperature] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const formNetSalePrice = useMemo(() => {
+    const sale = Number(formPublicSalePrice) || 0
+    const tax = Number(formTaxPercent) || 0
+    return sale * (1 - tax / 100)
+  }, [formPublicSalePrice, formTaxPercent])
 
   const fetchRecipes = () => {
     setLoading(true)
@@ -97,6 +108,11 @@ export default function RecipesFullPage() {
     setFormYieldUnit('porciones')
     setFormPrepTime(0)
     setFormCookTime(0)
+    setFormCategoryName('')
+    setFormRestaurantName('')
+    setFormPublicSalePrice(0)
+    setFormTaxPercent(10)
+    setFormServiceTemperature('')
     setShowForm(true)
   }
 
@@ -109,6 +125,11 @@ export default function RecipesFullPage() {
     setFormYieldUnit(recipe.yieldUnit)
     setFormPrepTime(recipe.prepTime)
     setFormCookTime(recipe.cookTime)
+    setFormCategoryName(recipe.categoryName || '')
+    setFormRestaurantName(recipe.restaurantName || '')
+    setFormPublicSalePrice(Number(recipe.publicSalePrice) || 0)
+    setFormTaxPercent(Number(recipe.taxPercent) || 10)
+    setFormServiceTemperature(recipe.serviceTemperature || '')
     setShowForm(true)
   }
 
@@ -116,6 +137,11 @@ export default function RecipesFullPage() {
     setShowForm(false)
     setEditingId(null)
     setFormName('')
+    setFormCategoryName('')
+    setFormRestaurantName('')
+    setFormPublicSalePrice(0)
+    setFormTaxPercent(10)
+    setFormServiceTemperature('')
   }
 
   const handleSave = async () => {
@@ -130,6 +156,12 @@ export default function RecipesFullPage() {
         yieldUnit: formYieldUnit,
         prepTime: Number(formPrepTime),
         cookTime: Number(formCookTime),
+        categoryName: formCategoryName.trim() || null,
+        restaurantName: formRestaurantName.trim() || null,
+        publicSalePrice: Number(formPublicSalePrice) || 0,
+        taxPercent: Number(formTaxPercent) || 0,
+        netSalePrice: Number(formNetSalePrice.toFixed(2)),
+        serviceTemperature: formServiceTemperature.trim() || null,
       }
       if (editingId) {
         await apiFetch(`/recipes/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) })
@@ -252,7 +284,7 @@ export default function RecipesFullPage() {
           <h1 className="text-3xl font-bold text-cifp-neutral-900 short:text-xl">Recetas</h1>
         </div>
         {isAdmin && (
-          <Button onClick={() => navigate('/recipes/new')} className="flex items-center gap-2">
+          <Button onClick={openCreate} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             <span>Nueva Receta</span>
           </Button>
@@ -376,7 +408,7 @@ export default function RecipesFullPage() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Tiempos</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Alérgenos</th>
-                  {isAdmin && <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Acciones</th>}
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cifp-neutral-200">
@@ -386,6 +418,8 @@ export default function RecipesFullPage() {
                     className={`hover:bg-cifp-neutral-50 transition-colors ${
                       selectedIds.includes(recipe.id) ? 'bg-blue-50' : ''
                     }`}
+                    onDoubleClick={() => navigate(`/recipes/${recipe.id}`)}
+                    title="Doble click para abrir la receta"
                   >
                     <td className="px-4 py-3">
                       <input
@@ -429,9 +463,17 @@ export default function RecipesFullPage() {
                         <span className="text-gray-300">-</span>
                       )}
                     </td>
-                    {isAdmin && (
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => navigate(`/recipes/${recipe.id}`)}
+                          className="p-2 text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors"
+                          title="Ver detalle"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {isAdmin && (
+                          <>
                           <button
                             onClick={() => openEdit(recipe)}
                             className="p-2 text-cifp-blue hover:bg-cifp-blue/10 rounded-lg transition-colors"
@@ -446,9 +488,10 @@ export default function RecipesFullPage() {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </div>
-                      </td>
-                    )}
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -583,6 +626,75 @@ export default function RecipesFullPage() {
                     className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Campos de negocio */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Categoría</label>
+                  <input
+                    type="text"
+                    value={formCategoryName}
+                    onChange={e => setFormCategoryName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                    placeholder="Ej: Arroces"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Restaurante</label>
+                  <input
+                    type="text"
+                    value={formRestaurantName}
+                    onChange={e => setFormRestaurantName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                    placeholder="Ej: Pedagógico"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs uppercase font-bold text-gray-800 mb-1">PVP (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formPublicSalePrice}
+                    onChange={e => setFormPublicSalePrice(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Impuestos (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formTaxPercent}
+                    onChange={e => setFormTaxPercent(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Precio Neto (€)</label>
+                  <input
+                    type="text"
+                    value={formNetSalePrice.toFixed(2)}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border rounded-lg border-gray-200 bg-gray-50 text-gray-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase font-bold text-gray-800 mb-1">Temperatura Servicio</label>
+                <input
+                  type="text"
+                  value={formServiceTemperature}
+                  onChange={e => setFormServiceTemperature(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-lg border-gray-300 focus:ring-2 focus:ring-cifp-blue/30 outline-none"
+                  placeholder="Ej: 65°C / Frío"
+                />
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, ClipboardList, Tags, Truck, Heart, Repeat, ChefHat, Archive, ArrowLeft, LayoutDashboard } from 'lucide-react'
+import { Box, ClipboardList, Tags, Truck, Heart, Repeat, ChefHat, Archive, ArrowLeft, LayoutDashboard, FileText } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 const ITEMS = [

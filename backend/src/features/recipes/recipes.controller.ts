@@ -40,6 +40,12 @@ export class RecipesController {
     return this.recipesService.getIngredients();
   }
 
+  @ApiOperation({ summary: 'Obtener materiales disponibles para recetas' })
+  @Get('materials')
+  async getMaterials(): Promise<Product[]> {
+    return this.recipesService.getMaterials();
+  }
+
   @ApiOperation({ summary: 'Obtener todas las recetas' })
   @Get()
   async findAll(): Promise<Recipe[]> {

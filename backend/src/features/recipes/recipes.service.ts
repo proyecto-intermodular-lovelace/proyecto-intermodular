@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Recipe } from './entities/recipe.entity';
@@ -23,19 +23,40 @@ export class RecipesService {
   ) {}
 
   async getIngredients(): Promise<any[]> {
-    // Obtener solo ingredientes usando queryBuilder directo a la BD
-    // Seleccionar solo columnas que existen en la tabla products
-    return this.productsRepo.query(`
-      SELECT 
-        id,
-        sku as code,
-        nombre as name,
-        descripcion as description,
-        precio as "unitPrice"
-      FROM public.products
-      ORDER BY nombre ASC
-      LIMIT 1000
-    `);
+    const products = await this.productsRepo
+      .createQueryBuilder('product')
+      .where('product.productType = :productType', { productType: ProductType.INGREDIENT })
+      .andWhere('product.isActive = :isActive', { isActive: true })
+      .orderBy('product.name', 'ASC')
+      .limit(1000)
+      .getMany();
+
+    return products.map((product) => ({
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      description: product.description,
+      unitType: product.unitType,
+      unitPrice: Number(product.unitPrice),
+    }));
+  }
+
+  async getMaterials(): Promise<any[]> {
+    const products = await this.productsRepo
+      .createQueryBuilder('product')
+      .where('product.productType = :productType', { productType: ProductType.MATERIAL })
+      .andWhere('product.isActive = :isActive', { isActive: true })
+      .orderBy('product.name', 'ASC')
+      .limit(1000)
+      .getMany();
+
+    return products.map((product) => ({
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      unitType: product.unitType,
+      unitPrice: Number(product.unitPrice),
+    }));
   }
 
   async findAll(): Promise<Recipe[]> {
@@ -55,6 +76,19 @@ export class RecipesService {
         code,
         name,
         description,
+        dish_image_url as "dishImageUrl",
+        elaboration,
+        presentation,
+        required_equipment as "requiredEquipment",
+        restaurant_name as "restaurantName",
+        category_name as "categoryName",
+        prepared_at as "preparedAt",
+        portion_size as "portionSize",
+        servings_count as "servingsCount",
+        public_sale_price as "publicSalePrice",
+        tax_percent as "taxPercent",
+        net_sale_price as "netSalePrice",
+        service_temperature as "serviceTemperature",
         difficulty,
         yield_quantity as "yieldQuantity",
         yield_unit as "yieldUnit",
@@ -91,31 +125,41 @@ export class RecipesService {
 
     // Get allergens for this recipe
     const allergens = await this.allergensRepo.query(
-      `SELECT * FROM public.recipe_allergens WHERE recipe_id = $1`,
+      `SELECT id, recipe_id, allergen_name, is_present, created_at FROM public.recipe_allergens WHERE recipe_id = $1`,
       [id]
     );
+
+    const normalizedAllergens = allergens.map((allergen) => ({
+      id: allergen.id,
+      recipeId: allergen.recipe_id,
+      allergenName: allergen.allergen_name,
+      name: allergen.allergen_name,
+      isPresent: allergen.is_present,
+      createdAt: allergen.created_at,
+    }));
 
     // Load products for each item
     if (items && items.length > 0) {
       for (const item of items) {
-        const products = await this.productsRepo.query(
-          `SELECT id, sku, nombre, descripcion, precio FROM public.products WHERE id = $1`,
-          [item.productId]
-        );
-        if (products && products.length > 0) {
+        const product = await this.productsRepo.findOne({
+          where: { id: item.productId },
+        });
+        if (product) {
           item.product = {
-            id: products[0].id,
-            code: products[0].sku,
-            name: products[0].nombre,
-            description: products[0].descripcion,
-            unitPrice: products[0].precio,
+            id: product.id,
+            code: product.code,
+            name: product.name,
+            description: product.description,
+            unitType: product.unitType,
+            unitPrice: Number(product.unitPrice),
+            productType: product.productType,
           };
         }
       }
     }
 
     recipe.items = items;
-    recipe.allergens = allergens;
+    recipe.allergens = normalizedAllergens;
 
     return recipe as Recipe;
   }
@@ -158,19 +202,17 @@ export class RecipesService {
   }
 
   async addItem(recipeId: string, dto: CreateRecipeItemDto): Promise<RecipeItem> {
-    const recipe = await this.findOne(recipeId);
+    await this.findOne(recipeId);
 
-    // Get product price using raw query to avoid column mapping issues
-    const productResult = await this.productsRepo.query(
-      'SELECT precio FROM public.products WHERE id = $1',
-      [dto.productId]
-    );
+    const product = await this.productsRepo.findOne({
+      where: { id: dto.productId },
+    });
 
-    if (!productResult || productResult.length === 0) {
+    if (!product) {
       throw new NotFoundException('Producto no encontrado');
     }
 
-    const unitPrice = productResult[0].precio;
+    const unitPrice = Number(product.unitPrice);
 
     const item = this.itemsRepo.create({
       recipeId,
@@ -195,7 +237,7 @@ export class RecipesService {
   }
 
   async syncAllergens(recipeId: string): Promise<RecipeAllergen[]> {
-    const recipe = await this.findOne(recipeId);
+    await this.findOne(recipeId);
 
     // Borrar alérgenos existentes
     await this.allergensRepo.delete({ recipeId });
@@ -206,7 +248,7 @@ export class RecipesService {
   }
 
   async addAllergen(recipeId: string, allergenId: string): Promise<RecipeAllergen> {
-    const recipe = await this.findOne(recipeId);
+    await this.findOne(recipeId);
 
     // Get allergen name from allergens table
     const allergenResult = await this.allergensRepo.query(

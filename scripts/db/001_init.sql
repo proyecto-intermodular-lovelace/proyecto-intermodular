@@ -33,6 +33,10 @@ DO $$ BEGIN
   CREATE TYPE public.incident_section AS ENUM ('INGREDIENTES', 'MATERIALES', 'USUARIOS', 'PEDIDOS', 'ALBARANES', 'PROVEEDORES', 'OTRO');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+DO $$ BEGIN
+  CREATE TYPE public.difficulty_level AS ENUM ('FACIL', 'MEDIA', 'DIFICIL');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 -- =========================
 -- USERS
 -- =========================
@@ -106,6 +110,9 @@ CREATE TABLE IF NOT EXISTS public.products (
   yield_percent numeric(5,2),
   relation      numeric(10,4),
   expires_at    date,
+  description   varchar(500),
+  stock         integer NOT NULL DEFAULT 0,
+  stock_minimo  integer,
   created_by    uuid NOT NULL REFERENCES public.users(id) ON DELETE RESTRICT,
   is_active     boolean NOT NULL DEFAULT true,
   created_at    timestamptz NOT NULL DEFAULT now(),
@@ -113,6 +120,80 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_type ON public.products(product_type);
+
+-- =========================
+-- ALLERGENS
+-- =========================
+CREATE TABLE IF NOT EXISTS public.allergens (
+  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name        varchar(100) NOT NULL UNIQUE,
+  description text,
+  category    varchar(100) NOT NULL DEFAULT 'Alimentos',
+  is_active   boolean NOT NULL DEFAULT true,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- =========================
+-- RECIPES
+-- =========================
+CREATE TABLE IF NOT EXISTS public.recipes (
+  id             uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code           varchar(30) UNIQUE NOT NULL,
+  name           varchar(200) NOT NULL,
+  restaurant_name varchar(200),
+  category_name  varchar(100),
+  prepared_at    date,
+  portion_size   varchar(100),
+  servings_count integer,
+  public_sale_price numeric(10,2),
+  tax_percent    numeric(5,2),
+  net_sale_price numeric(10,2),
+  service_temperature varchar(100),
+  description    text,
+  dish_image_url text,
+  elaboration    text,
+  presentation   text,
+  required_equipment text,
+  difficulty     public.difficulty_level NOT NULL,
+  yield_quantity numeric(10,2) NOT NULL,
+  yield_unit     varchar(50) NOT NULL,
+  prep_time      integer NOT NULL DEFAULT 0,
+  cook_time      integer NOT NULL DEFAULT 0,
+  is_active      boolean NOT NULL DEFAULT true,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  updated_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipes_created_at ON public.recipes(created_at);
+
+-- =========================
+-- RECIPE ITEMS
+-- =========================
+CREATE TABLE IF NOT EXISTS public.recipe_items (
+  id         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  recipe_id  uuid NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
+  product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
+  quantity   numeric(12,4) NOT NULL CHECK (quantity > 0),
+  unit_price numeric(12,2) NOT NULL CHECK (unit_price >= 0),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_items_recipe ON public.recipe_items(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_items_product ON public.recipe_items(product_id);
+
+-- =========================
+-- RECIPE ALLERGENS
+-- =========================
+CREATE TABLE IF NOT EXISTS public.recipe_allergens (
+  id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  recipe_id     uuid NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
+  allergen_name varchar(100) NOT NULL,
+  is_present    boolean NOT NULL DEFAULT true,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_allergens_recipe ON public.recipe_allergens(recipe_id);
 
 -- =========================
 -- INVENTORY
