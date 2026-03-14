@@ -22,7 +22,7 @@ Para acceder al SmartEconomato necesitarás:
 - Una **dirección de correo electrónico** institucional o la que te haya facilitado el profesorado.
 - Una **clave** (contraseña) asignada por el centro o creada durante el proceso de registro.
 
-Si no dispones de credenciales o las has olvidado, indica a tu profesor o contacta con la administración del centro. Alternativamente, puedes usar la opción de registro desde la pantalla de acceso. No compartas tu clave con otras personas.
+Si no dispones de credenciales puedes usar la opción de registro desde la pantalla de acceso. No compartas tu clave con otras personas.
 
 ---
 
@@ -90,7 +90,7 @@ El sistema cuenta con opciones de navegación siempre disponibles.
 #### Barra de Menú Principal (Navbar)
 
 Visible bajo la cabecera en modo apaisado o desplazable, cuenta con la barra de navegación que lista:
-- **Inicio**: Siempre visible a la izquierda para volver al Dashboard cómodamente.
+- **Inicio**: Logotipo del CIFP Virgen de Candelaria. Siempre visible a la izquierda para volver al Dashboard cómodamente.
 - **Volver**: Sólo visible si hay historial de navegación previo dentro de la sesión temporal. Vuelve a la pantalla precedente.
 - Enlaces rápidos de iconos y texto para el resto de grandes elementos (**Ingredientes**, **Materiales**, **Recetas**, **Pedidos**, etc.).
 
@@ -216,4 +216,4 @@ Para redactar y armar el nuevo borrador, sitúate en la cima y presiona **«+ Nu
 
 ---
 
-*CIFP Virgen de Candelaria — Gobierno de Canarias · SmartEconomato v1.0*
+*IES Domingo Pérez Minik — Gobierno de Canarias · SmartEconomato v1.0*

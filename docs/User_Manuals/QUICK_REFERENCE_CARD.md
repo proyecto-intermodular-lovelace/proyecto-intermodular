@@ -1,103 +1,50 @@
 # 🖨️ TARJETA DE REFERENCIA RÁPIDA
 ## Lovelace · Smarteconomato — IES Domingo Perez Minik
 
-> **Diseñada para imprimir en A4 · Plastificar y colocar junto al quiosco**
+> **Diseñada para imprimir y colocar junto al quiosco o tablet**
 
 ---
 
-## 🔑 INICIAR Y CERRAR SESIÓN
+## 🔑 ACCESO
 
-| Paso | Acción |
-|:---:|---|
-| **1** | **Pulsa** el campo **"Usuario"** e introduce tu nombre de usuario con el teclado de pantalla. |
-| **2** | **Pulsa** el campo **"Contraseña"** e introdúcela. |
-| **3** | **Pulsa** el botón grande **"Iniciar Sesión"**. |
-
-> ⚠️ **AL TERMINAR:** Pulsa tu nombre (arriba a la derecha) → **"Cerrar Sesión"**. ¡Siempre!
+* **Tocar** el campo **"Email"** e introducir el correo con el teclado en pantalla.
+* **Tocar** el campo **"Contraseña"** e introducirla.
+* **Pulsar** el botón grande de **"Iniciar Sesión"**.
 
 ---
 
-## 📦 GUÍA DE 3 PASOS — Jefe de Economato: Aprobar un Pedido
+## 🎓 OPERATIVA ALUMNO
 
-> *Flujo más habitual del día: revisar y aprobar los pedidos de los profesores.*
+### 📦 Consultar Inventario
+* **Pulsar** **"Ingredientes"** o **"Materiales"** en la navegación.
+* **Deslizar** la pantalla para ver el listado de productos y su stock.
+* **Tocar** un producto para expandir sus detalles.
 
-```
-PASO 1 ── Pulsa "Herramientas" → "Pedidos" en el menú lateral.
-              Filtra por estado 🟡 "Pendiente".
-
-PASO 2 ── Pulsa sobre el pedido que quieres revisar.
-              Comprueba los productos, cantidades y fecha de uso.
-              El sistema resalta en 🔴 rojo los productos sin stock suficiente.
-
-PASO 3 ── Si todo es correcto → Pulsa "Aprobar Pedido" ✅
-              Si hay algún problema → Pulsa "Rechazar Pedido" ❌ y escribe el motivo.
-```
-
-`[Insertar Captura de Pantalla — Botones Aprobar / Rechazar en el detalle del pedido]`
+### 🛒 Enviar un Pedido a Revisión
+* **Pulsar** **"Pedidos"** y luego en el botón **"+ Nuevo Pedido"**.
+* Introducir los datos principales y la fecha de uso.
+* **Pulsar** **"+ Añadir Línea"** para seleccionar productos y establecer cantidades.
+* **Pulsar** **"Enviar Pedido"** para ponerlo a disposición de su revisión.
 
 ---
 
-## 📋 GUÍA DE 3 PASOS — Alumno: Ver mis tareas del día
+## 👩‍🏫 OPERATIVA PROFESOR
 
-> *Consulta rápida de los pedidos asignados a tu clase.*
+### ✅ Revisar y Aprobar un Pedido de Alumno
+* **Pulsar** **"Pedidos"** en la navegación.
+* **Deslizar** y **tocar** un pedido de alumno con estado 🟡 **"Pendiente"**.
+* Revisar en pantalla los productos solicitados.
+* **Pulsar** el botón **"Aprobar"** o **"Rechazar"** (indicando el motivo).
 
-```
-PASO 1 ── Pulsa "Herramientas" → "Pedidos" en el menú lateral.
-
-PASO 2 ── Desliza la lista hasta encontrar el pedido de tu clase o grupo.
-              Pulsa sobre él para ver el detalle.
-
-PASO 3 ── Comprueba el estado del pedido:
-              🟡 Pendiente  →  Aún no revisado.
-              🟢 Aprobado   →  Confirmado y en preparación.
-              📦 Entregado  →  Ya está listo para recoger.
-              🔴 Rechazado  →  Consulta con tu profesor.
-```
-
-`[Insertar Captura de Pantalla — Lista de pedidos del alumno con estados visibles]`
+### 📝 Crear un Pedido Directo
+* **Pulsar** **"Pedidos"** y luego **"+ Nuevo Pedido"**.
+* Rellenar los datos y **pulsar** **"+ Añadir Línea"** para incluir los productos necesarios.
+* **Pulsar** **"Enviar Pedido"** para mandarlo directamente al Jefe de Economato.
 
 ---
 
-## 📝 GUÍA DE 3 PASOS — Profesor: Crear un Pedido
+## 🚨 SEGURIDAD EN KIOSCO (¡MUY IMPORTANTE!)
 
-> *Solicita los ingredientes y materiales que necesitas para tu práctica.*
-
-```
-PASO 1 ── Pulsa "Herramientas" → "Pedidos" → "+ Nuevo Pedido".
-              Rellena el nombre, fecha de uso y clase/grupo.
-
-PASO 2 ── Pulsa "+ Añadir Línea". Busca cada producto y establece la cantidad.
-              Repite por cada ingrediente o material que necesites.
-
-PASO 3 ── Revisa el resumen y pulsa "Enviar Pedido".
-              El Jefe de Economato recibirá la solicitud para aprobarla.
-```
-
-> 💡 Crea tus pedidos con **al menos 48 horas de antelación**.
-
----
-
-## 🚨 ANTE CUALQUIER PROBLEMA TÉCNICO
-
-| Situación | Qué hacer |
-|---|---|
-| Pantalla no responde | Espera 10 segundos. Toca con firmeza. Avisa al profesor o IT. |
-| Error de red / pantalla en blanco | Espera 30 segundos. Si persiste, avisa al administrador de IT. |
-| Contraseña olvidada | Dirígete a tu profesor o al administrador de IT. |
-| Sesión de otra persona abierta | **No toques nada.** Avisa a un profesor inmediatamente. |
-
-> 🚫 **NUNCA intentes reiniciar el quiosco por tu cuenta.**
-
----
-
-## 📞 CONTACTOS DE SOPORTE
-
-| Rol | Nombre | Extensión / Contacto |
-|---|---|---|
-| Jefe de Economato | *(Rellenar)* | *(Rellenar)* |
-| Administrador IT | *(Rellenar)* | *(Rellenar)* |
-| Secretaría del centro | *(Rellenar)* | *(Rellenar)* |
-
----
-
-*Lovelace Smarteconomato v1.0 · IES Domingo Perez Minik · Marzo 2026*
+> ⚠️ **LOS TERMINALES SON COMPARTIDOS. DEBES CERRAR SESIÓN SIEMPRE:**
+> * **Tocar** tu nombre o perfil en la parte superior derecha.
+> * **Pulsar** el botón **"Cerrar Sesión"**.
