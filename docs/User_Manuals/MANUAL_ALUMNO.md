@@ -9,7 +9,7 @@
 
 ## 1. Introducción
 
-El **SmartEconomato** es el sistema de gestión digital del economato del CIFP Virgen de Candelaria. Permite a los alumnos consultar el inventario de ingredientes y materiales disponibles en el centro.
+El **SmartEconomato** es el sistema de gestión digital del economato del CIFP Virgen de Candelaria. Permite a los alumnos consultar el inventario de ingredientes y materiales disponibles en el centro, así como realizar pedidos para las prácticas.
 
 El sistema está diseñado para funcionar en modo quiosco (pantalla táctil), aunque también es accesible desde dispositivos de escritorio y tableta.
 
@@ -22,13 +22,13 @@ Para acceder al SmartEconomato necesitarás:
 - Una **dirección de correo electrónico** institucional o la que te haya facilitado el profesorado.
 - Una **clave** (contraseña) asignada por el centro o creada durante el proceso de registro.
 
-Si no dispones de credenciales o las has olvidado, indica a tu profesor o contacta con la administración del centro. No compartas tu clave con otras personas.
+Si no dispones de credenciales o las has olvidado, indica a tu profesor o contacta con la administración del centro. Alternativamente, puedes usar la opción de registro desde la pantalla de acceso. No compartas tu clave con otras personas.
 
 ---
 
 ## 3. Acceso al Sistema y Navegación
 
-### 3.1 Inicio de Sesión (Login)
+### 3.1 Inicio de Sesión (Login) y Registro
 
 Al acceder a la URL del SmartEconomato verás la pantalla de inicio de sesión, identificada con el logotipo del **CIFP Virgen de Candelaria** y el título **SmartEconomato**.
 
@@ -45,15 +45,14 @@ El formulario de acceso contiene los siguientes campos:
 2. Toca el campo **Clave** e introduce tu contraseña.
 3. Toca el botón **Entrar** para acceder al sistema.
 
-**Mensajes de error:**
+**Enlaces disponibles en la pantalla de login:**
 
-- Si el campo **Email** o el campo **Clave** se dejan en blanco al pulsar «Entrar», aparecerá un mensaje de error indicando que el campo es obligatorio.
-- Si las credenciales son incorrectas, se mostrará un mensaje de error general bajo el formulario.
+- **¿Problemas con el usuario o la clave?** — Toca este enlace para recuperar tu contraseña si tienes dificultades para acceder.
+- **¿No tienes cuenta? Regístrate aquí** — Permite crear una nueva cuenta de alumno.
 
-**Otros enlaces disponibles en la pantalla de login:**
+**Registro de una nueva cuenta:**
 
-- **¿Problemas con el usuario o la clave?** — Toca este enlace si tienes dificultades para acceder.
-- **¿No tienes cuenta? Regístrate aquí** — Permite solicitar el registro en el sistema.
+Si eliges registrarte, accederás a un formulario donde deberás introducir tu **Nombre**, **Primer apellido**, **Segundo apellido** (opcional), tu **Email**, y una **Contraseña** (mínimo 6 caracteres) con su confirmación. Una vez completado, pulsa **Crear Cuenta** e inicia sesión con las credenciales que acabas de definir.
 
 ![Vista de Kiosco](../../assets/images/alumno_login_inicio_kiosk.JPG)
 
@@ -64,20 +63,21 @@ El formulario de acceso contiene los siguientes campos:
 Tras iniciar sesión correctamente, accederás al **Dashboard** o pantalla de inicio. Esta pantalla muestra:
 
 - **Saludo personalizado:** Se muestra un saludo dinámico según la hora del día («Buenos días», «Buenas tardes» o «Buenas noches»), seguido de tu nombre y apellido. También se muestra el día de la semana y la fecha actual.
-- **Etiqueta de rol:** En la esquina superior derecha del saludo aparece tu rol como **«Alumno / a»** con una etiqueta de color verde.
-- **Acceso rápido:** Un panel de acceso rápido con los siguientes módulos disponibles:
+- **Etiqueta de rol:** En la cabecera del saludo aparece tu rol como **«Alumno / a»** con una etiqueta distintiva.
+- **Acceso rápido:** Un panel de acceso circular/cuadrado con los principales módulos:
 
 | Módulo | Descripción |
 |--------|-------------|
-| **Ingredientes** | Catálogo de ingredientes: precios y rendimientos por unidad de medida. |
-| **Materiales** | Gestión de materiales y equipamiento: stock actual. |
-| **Recetas** | Fichas técnicas de recetas del centro. |
-| **Bajas / Dev.** | Registro de bajas por caducidad o rotura y devoluciones. |
-| **Pedidos** | Solicitudes de pedido por clase. |
-| **Albaranes** | Registro de albaranes de entrega. |
-| **Proveedores** | Directorio de proveedores. |
+| **Ingredientes** | Catálogo de ingredientes: altas, bajas, precios y rendimientos por unidad de medida. |
+| **Materiales** | Gestión de materiales y equipamiento: stock actual, entradas y salidas de almacén. |
+| **Categorías** | Gestión de categorías de ingredientes y materiales para clasificar productos. |
+| **Recetas** | Fichas técnicas de recetas del centro: escandallo, costes y tabla de alérgenos. |
+| **Bajas / Dev.** | Registro de bajas por caducidad o rotura y devoluciones a proveedores. |
+| **Pedidos** | Solicitudes de pedido por clase, revisión docente y consolidado semanal del economato. |
+| **Albaranes** | Registro y validación de albaranes de entrega recibidos de los proveedores. |
+| **Proveedores** | Directorio de proveedores: contacto, condiciones comerciales y catálogo asociado. |
 
-Toca cualquiera de los iconos de acceso rápido para navegar al módulo correspondiente. Al mantener el dedo sobre un elemento se mostrará una descripción emergente del módulo.
+Toca cualquiera de los iconos de acceso rápido para navegar al módulo correspondiente. Al mantener el cursor sobre un elemento se mostrará una descripción emergente del módulo.
 
 ![Vista de Kiosco](../../assets/images/alumno_inventario_general_kiosk.JPG)
 
@@ -85,95 +85,63 @@ Toca cualquiera de los iconos de acceso rápido para navegar al módulo correspo
 
 ### 3.3 Navegación Global y Perfil
 
-La barra de navegación superior (**cabecera**) está siempre visible desde cualquier pantalla del sistema y ofrece las siguientes opciones:
+El sistema cuenta con opciones de navegación siempre disponibles.
 
-#### Volver al Inicio
+#### Barra de Menú Principal (Navbar)
 
-Toca el **logotipo del CIFP Virgen de Candelaria** (imagen en la esquina superior izquierda de la cabecera) para volver al **Dashboard** desde cualquier sección de la aplicación. Este botón siempre está disponible.
+Visible bajo la cabecera en modo apaisado o desplazable, cuenta con la barra de navegación que lista:
+- **Inicio**: Siempre visible a la izquierda para volver al Dashboard cómodamente.
+- **Volver**: Sólo visible si hay historial de navegación previo dentro de la sesión temporal. Vuelve a la pantalla precedente.
+- Enlaces rápidos de iconos y texto para el resto de grandes elementos (**Ingredientes**, **Materiales**, **Recetas**, **Pedidos**, etc.).
 
-#### Mi Perfil
+#### Menú de Usuario y Cabecera
 
-En la esquina superior derecha de la cabecera aparece tu nombre y apellido con un icono de usuario. Tocando sobre ellos se despliega un menú con las siguientes opciones:
+La barra superior contiene el logotipo del instituto (que sirve también para volver a Inicio al tacto) y el menú de usuario a la derecha. Tocando sobre tu nombre (y el icono de usuario) logras desplegar:
 
 | Opción | Acción |
 |--------|--------|
 | **Perfil** | Accede a la pantalla de tu perfil personal. |
-| **Modo claro/oscuro** | Cambia el tema visual de la aplicación. |
-| **Cerrar sesión** | Cierra tu sesión activa y te devuelve a la pantalla de inicio de sesión. |
+| **Modo claro/oscuro** | Cambia el tema visual global de la aplicación web a tonos claros o apagados. |
+| **Cerrar sesión** | Cierra tu sesión activa y te devuelve rotando a la pantalla de inicio de sesión. |
 
-#### Pantalla de Perfil
+#### Pantalla de Mi Perfil
 
-Al tocar **Perfil** accedes a la pantalla **Mi perfil**, donde encontrarás:
-
-**Tarjeta de identidad:**
-Muestra tus iniciales en un avatar circular, tu nombre completo, tu dirección de correo electrónico y tu rol (etiqueta «Alumno / a»).
+Al tocar **Perfil** accedes a tu tarjeta de identidad, que muestra:
+- Tus iniciales en colores generados, nombre completo, email, al igual que la etiqueta de rol asignada en base de datos.
 
 **Sección «Datos personales»** — campos editables:
-
-| Campo | Descripción |
-|-------|-------------|
-| **Nombre** | Tu nombre de pila (mínimo 2 caracteres). |
-| **Primer apellido** | Tu primer apellido (mínimo 2 caracteres). |
-| **Segundo apellido** | Tu segundo apellido (opcional). |
-| **Email** | Tu dirección de correo electrónico. |
-
-Modifica los datos que desees y toca el botón **Guardar cambios** para confirmar. El sistema mostrará un mensaje de confirmación o de error según el resultado de la operación.
+Puedes actualizar bajo demanda tu **Nombre**, **Primer apellido**, **Segundo apellido** y **Email**. Modifica los datos que desees y toca **Guardar cambios**. 
 
 **Sección «Cambiar contraseña»:**
-
-Esta sección solo aparece cuando estás viendo tu propio perfil. Permite cambiar tu contraseña actual por una nueva. Contiene tres campos:
-
-| Campo | Descripción |
-|-------|-------------|
-| **Contraseña actual** | Introduce tu contraseña en uso. |
-| **Nueva contraseña** | Nueva contraseña (mínimo 6 caracteres). |
-| **Confirmar contraseña** | Repite la nueva contraseña para confirmar. |
-
-Toca el botón **Cambiar contraseña** para aplicar el cambio. Cada campo tiene un icono para mostrar u ocultar los caracteres escritos.
+En esa misma ventana tienes la oportunidad de modificar tu contraseña introduciendo tu **Contraseña actual**, la **Nueva contraseña**, y tu validación en **Confirmar contraseña**. Toca el botón de cierre para guardar permanentemente tras rellenarlo, permitiéndote ver u ocultar esta contraseña usando el pequeño ojo en el interior de cada campo.
 
 ---
 
 ## 4. Consulta de Inventario
 
+Como alumno del CIFP, cuentas con credenciales de lectura para visualizar el inventario de todos los géneros cargados en la base de datos principal.
+
 ### 4.1 Ingredientes
 
-Para acceder al inventario completo de ingredientes, toca el enlace **«Gestión avanzada»** desde el resumen de ingredientes, o navega directamente desde el Dashboard tocando **Ingredientes**.
+Para consultar el almacén alimentario de ingredientes, toca **Ingredientes** desde tu Dashboard o desde el Navbar flotante global.
 
-La pantalla muestra una **tabla de ingredientes** con las siguientes columnas:
+La pantalla emite una **tabla de ingredientes** bajo columnas estructuradas tales como **ID (SKU)**, **Nombre**, **Categoría**, **Stock**, **Precio (€)** y **Rendimiento**.
 
-| Columna | Descripción |
-|---------|-------------|
-| *(Casilla de selección)* | Permite seleccionar uno o varios ingredientes. |
-| **ID (SKU)** | Código de referencia del ingrediente. |
-| **Nombre** | Nombre del ingrediente. |
-| **Categoría** | Categoría a la que pertenece. |
-| **Stock** | Cantidad disponible en almacén (con la unidad de medida). Se muestra en rojo si el stock está por debajo del mínimo. |
-| **Precio (€)** | Precio por unidad. |
-| **Rendimiento** | Factor de rendimiento del ingrediente. |
-| **Acciones** | Botones para ver el detalle del ingrediente. |
+**Herramientas de búsqueda y filtrado de la vista:**
+- **Barra de búsqueda**: Puedes rastrear velozmente por ID (ej. ING-0021) o texto directo.
+- **Selectores de Filtro (Dropdowns)**: Cajas desplegables te permitirán apartar resultados centrándose solo en cierta Categoría (Bebidas, Lácteos, Carnes...) o Proveedor.
+- **Checkbox: Stock crítico**: Una casilla ideal para filtrar de inmediato y localizar únicamente productos cuyo nivel desciende por debajo del mínimo de seguridad establecido. Las filas verán su color de resalte modificado si están en este estado de alerta.
+- **Botón Exportar CSV**: Puedes en un solo clic agrupar a hoja de cálculo tabulada a los ingredientes resultantes de tus filtros o seleccionados expresamente para exportarlo.
+- **Resetear Filtros**: Un atajo fundamental con cruz visual que resetea la visual a todos los resultados iniciales.
 
-**Herramientas de búsqueda y filtrado:**
+**Acciones y ordenación de la tabla:**
+- Clica simplemente en cualquiera de las cabeceras referidas para variar el ordenamiento entre ascendente/descendente (por su letra o valor base).
+- En la última columna "Acciones", cuentas con un botón iconizado de ojo (👁) en cada fila individual para ir a su informe específico: la ficha técnica del producto. Podrás corroborar que otros botones (como Editar, símbolo de lápiz o Eliminar con papelera) estarán visibles pero desactivados por requerirse permisos del profesor o de almacén.
 
-- **Campo de búsqueda** — Filtra los ingredientes por cualquier campo (ID, nombre, etc.).
-- **Selector de Categorías** — Filtra por categoría del ingrediente.
-- **Selector de Proveedores** — Filtra por proveedor.
-- **Botón «Resetear»** — Elimina todos los filtros aplicados.
-- **Casilla «Stock crítico»** — Muestra únicamente los ingredientes cuyo stock está por debajo del mínimo establecido.
+**Ver detalle técnico de un ingrediente:**
+Accede haciendo clic en la lupa/ojo mencionado o con un rápido doble toque soble la franja de fila. Adentrándote visualizarás un informe bloqueado con apartados fundamentales: Nombre, Tipo de Unidad, SKU y la Descripción base del envase. Abajo visualizarás las cantidades netas con Precio, Stock actual en cifra y tu porcentaje de Rendimiento estandarizado.
 
-**Ordenación:** Toca la cabecera de cualquier columna (ID, Nombre, Categoría, Stock, Precio, Rendimiento) para ordenar la tabla de forma ascendente o descendente.
-
-**Ver detalle de un ingrediente:**
-- Selecciona un ingrediente (toca la casilla a la izquierda de la fila) y toca el botón **«Ver Detalle»**.
-- También puedes tocar el icono de ojo (👁) en la columna de acciones de cada fila.
-- O bien, haz doble toque sobre una fila para ir directamente al detalle.
-
-La pantalla de detalle muestra los campos: Nombre del producto, Tipo Unidad, Descripción, Precio/Unidad, Stock, % Rendimiento, Relación (calculado), Categoría y Proveedor.
-
-> **Nota para alumnos:** La creación, modificación y eliminación de ingredientes están reservadas al profesorado y al personal del economato. Los alumnos solo pueden consultar la información.
-
-**Exportación:** Al pie de la tabla se encuentra el botón **«Exportar CSV»**, que descarga los ingredientes visibles (o los seleccionados) en formato de hoja de cálculo.
-
-**Volver al resumen:** Toca **«← Volver a Resumen»** para regresar a la vista anterior.
+> **Nota para alumnos:** Las herramientas de escritura, tales como la creación base del ítem, modificaciones y bajas por caducidad se ubican restringidas en exclusiva sobre el perfil de un Gestor Económico.
 
 ![Vista de Kiosco](../../assets/images/alumno_inventario_general_kiosk.JPG)
 
@@ -181,41 +149,14 @@ La pantalla de detalle muestra los campos: Nombre del producto, Tipo Unidad, Des
 
 ### 4.2 Materiales
 
-La sección de materiales es accesible desde el Dashboard tocando **Materiales**, o desde el resumen de inventario mediante el botón de gestión avanzada.
+Este módulo gestiona la infraestructura inerte pero útil usada a diario en prácticas de centro. Ubicado bajo el botón de **Materiales**. Su estructura asimila casi de manera exacta al catálogo de ingredientes.
 
-La pantalla muestra una **tabla de materiales** con las siguientes columnas:
+A lo largo de la cuadrícula, los estudiantes leeran variables como: **ID (SKU)**, **Nombre**, **Categoría** (Mobiliario, Seguridad, Packaging...), **Stock** final, y su **Precio** actual por cantidad.
 
-| Columna | Descripción |
-|---------|-------------|
-| *(Casilla de selección)* | Permite seleccionar uno o varios materiales. |
-| **ID (SKU)** | Código de referencia del material. |
-| **Nombre** | Nombre del material. |
-| **Categoría** | Categoría del material (Utensilios, Packaging, Limpieza, Seguridad, Mobiliario, Maquinaria, Papelería, Otros). |
-| **Stock** | Cantidad disponible (con unidad de medida). Se muestra en rojo si el stock está por debajo del mínimo. |
-| **Precio (€)** | Precio por unidad. |
-| **Acciones** | Botones para ver el detalle del material. |
+Cuentas de igual manera con la inmensidad de **Filtros por nombre, categoría, proveedor y stock perjudicial**, ordenamientos de columnas y el motor de **exportación CSV**.
 
-**Herramientas de búsqueda y filtrado:**
-
-- **Campo de búsqueda** — Filtra los materiales por SKU o nombre.
-- **Selector «Todas las categorías»** — Filtra por categoría.
-- **Selector «Todos los proveedores»** — Filtra por proveedor.
-- **Botón «Resetear Filtros»** — Elimina todos los filtros aplicados.
-- **Casilla «Solo stock crítico»** — Muestra únicamente los materiales con stock bajo mínimo.
-
-**Ordenación:** Toca la cabecera de cualquier columna para ordenar la tabla.
-
-**Ver detalle de un material:**
-- Toca el icono de ojo (👁) en la columna de acciones.
-- O haz doble toque sobre una fila.
-
-La pantalla de detalle muestra los campos: Nombre del Material, Unidad de Medida, SKU, Descripción, Precio/Unidad, Stock, Stock Mínimo, Rendimiento, Categoría y Proveedor.
-
-> **Nota para alumnos:** La creación, modificación y eliminación de materiales están reservadas al profesorado y al personal del economato. Los alumnos solo pueden consultar la información.
-
-**Exportación:** Al pie de la tabla se encuentra el botón **«Exportar CSV»**, que descarga los materiales visibles (o los seleccionados) en formato de hoja de cálculo.
-
-**Volver al resumen:** Toca **«← Volver a Resumen»** para regresar a la vista anterior.
+**Ver detalle de un bien material (MaterialDetailPage):**
+Dentro encontrarás campos asimilados al campo superior, incluyendo ahora valores más amplios como su cifra de **Stock Mínimo** (utilizado para colorearlo a estado Crítico en rojo) y si está inactivo/activo logísticamente para pedirlo con antelación en futuras clases.
 
 ---
 
@@ -223,88 +164,55 @@ La pantalla de detalle muestra los campos: Nombre del Material, Unidad de Medida
 
 ### 5.1 Vista de Pedidos
 
-Para acceder a tus pedidos, toca **Pedidos** en el Dashboard. La pantalla **«Mis Pedidos»** muestra todas tus solicitudes y permite crear nuevas.
+Uno de los principales ejes operativos del alumno es la proposición electrónica formal de la materia prima. Navega hasta **Pedidos** para originar o rastrear el estado logístico. 
 
-**Encabezado de la pantalla:**
-- Título: «Mis Pedidos»
-- Subtítulo: «Solicita materiales e ingredientes para tus prácticas»
-- Botón **«+ Nueva solicitud»** — Abre el formulario para crear un nuevo pedido.
+**Pestañas (Tabs) Generales:**
+Tu panorama general presentará una línea de pestañas inteligentes de monitorización que engloban cantidades: **Borradores**, **Enviados**, **Aprobados**, **Cancelados** y el volcado total en **Todos**. 
 
-#### Lista de pedidos
+#### Lista de los pedidos en curso
 
-Cada pedido se muestra como una tarjeta desplegable con la siguiente información visible:
+De la lista, aprecies rectángulos denominados "Tarjetas de pedido" exhibiendo a los ojos:
+- Formato del estado visual de la petición (Con distintos colores referenciales en badges).
+- El lunes de arranque que determina a su propia **Semana de práctica** (ej. "Semana del 11/04").
+- Cantidad neta de productos en interior y hora de origen documental.
 
-| Dato | Descripción |
-|------|-------------|
-| **Estado del pedido** | Etiqueta de estado (por ejemplo: *Borrador*, *Enviado*, etc.). |
-| **Semana del pedido** | Indica la semana para la que se solicitan los productos («Semana del [fecha]»). |
-| **Número de productos** | Cantidad de productos incluidos en la solicitud. |
-| **Fecha de creación** | Fecha en la que se creó el pedido. |
+Dentro de esta tarjeta la visualización se amplifica. Realiza clic (o un tap de dedo en ella misma o su flecha lateral orientada) para examinar la tabla inferior incrustada con:
+- **Producto:** Enlista sus productos ya escogidos y vinculados por ti.
+- **Cant. solicitada:** Es la cantidad en su unidad base que marcaste originariamente que necesitabas consumir.
+- **Cant. aprobada:** Examen y modificación del educador que ha podido ajustar ese consumo. Consta guiones `—` si todavía no tuvo respuesta formal por su parte en los listados enviados.
+- **Notas:** Comentarios o pautas escritas individuales que dejaste anexados al crear la petición a ese recurso concreto.
 
-Si un pedido está en estado **Borrador**, aparecen dos botones adicionales:
+Focalizando si el pedido permanece encauzado y su estado marca exclusivamente **Borrador**, surgirán al exterior un par de botones interactivos:
+- **Botón "Enviar"** (Línea Azul): Formaliza la petición empañetada. Se someterá entonces a envío directo al dashboard del profesor imposibilitando tu re-edición y dejándolo en estado *Enviado*. Ten en cuenta que es necesario sumar más de un producto a la saca para habilitarlo funcionalmente.
+- **Botón "Cancelar"**: Abandona o detiene el rumbo con total de la edición.
 
-| Botón | Acción |
-|-------|--------|
-| **Enviar** | Envía el borrador al profesor para su revisión. Solo disponible si el pedido contiene al menos un producto. |
-| **Cancelar** | Elimina el borrador (solicita confirmación). |
+#### Iniciar una nueva solicitud a Economato
 
-Toca la tarjeta de cualquier pedido para **desplegarla** y ver el detalle de sus productos. La tabla de detalle contiene las siguientes columnas:
+Para redactar y armar el nuevo borrador, sitúate en la cima y presiona **«+ Nueva solicitud»**. El sistema invoca en modo ventana (modal):
 
-| Columna | Descripción |
-|---------|-------------|
-| **Producto** | Nombre del producto solicitado y su unidad de medida. |
-| **Cant. solicitada** | Cantidad que has pedido. |
-| **Cant. aprobada** | Cantidad aprobada por el profesor (muestra «—» si aún no ha sido revisado). |
-| **Notas** | Observaciones asociadas al producto (muestra «—» si no hay notas). |
-
-#### Crear una nueva solicitud de pedido
-
-Al tocar **«+ Nueva solicitud»** se abre el formulario **«Nueva solicitud de pedido»** con los siguientes campos:
-
-| Campo | Descripción |
-|-------|-------------|
-| **Semana del pedido** *(obligatorio)* | Selecciona la fecha de la práctica. La fecha se ajusta automáticamente al lunes de la semana seleccionada. |
-| **Notas del pedido** | Campo de texto libre para añadir observaciones generales del pedido (p. ej.: «Para la práctica del martes de repostería»). |
-| **Productos** | Lista de productos que deseas solicitar. |
-
-**Añadir productos al pedido:**
-
-1. Toca el enlace **«+ Añadir producto»** para mostrar el buscador de productos.
-2. Escribe el nombre del ingrediente o material en el campo de búsqueda.
-3. Selecciona el producto deseado de la lista desplegable. Se mostrará el nombre, la unidad de medida y el tipo (Ingrediente o Material).
-4. El producto se añade a la lista del pedido. Para cada producto puedes ajustar:
-   - **Cantidad solicitada** — Introduce el número de unidades que necesitas.
-   - **Notas** — Observaciones específicas para ese producto.
-5. Para eliminar un producto de la lista, toca el icono de la **X** junto al mismo.
-
-**Guardar o enviar el pedido:**
-
-- Toca **«Guardar borrador»** para guardar el pedido en estado *Borrador* sin enviarlo todavía al profesor.
-- Desde la lista de pedidos, cuando estés preparado, toca **«Enviar»** en la tarjeta del borrador para enviarlo al profesor.
-- Toca **«Cancelar»** en la ventana modal para cerrarla sin guardar cambios.
+1. **Selector temporal de Semana**: Requisito donde, sin importar tu elección individual, el sistema estandarizará el puntero hacia el Lunes estricto de aquella semana de calendario a desarrollar tus labores en aula/taller.
+2. **Espacio para Notas**: Bloque reservado que trasvasará en forma de texto todo detalle particular u observación que tu docente va a deber estudiar con el ticket base.
+3. **El listado de Recursos/Productos**:
+   - Activa su buscador tocando el signo  **«+ Añadir producto»**.
+   - Ingresa o selecciona sobre su catálogo en línea. Notarás al desplegar que el sistema se adelanta a tus errores reportándote instantáneamente en línea si el elemento cuenta con inventario base deficiente o crítico. Es tu responsabilidad pedir algo con suficiencia de disponibilidad en tienda. 
+   - Acomoda la unidad numérica decimal dentro de su bloque y redacta algo extra en la columna contigua si procediera. Se retirarán productos individualmente activando su pulsador con aspa roja de eliminación. 
+4. **Registro Local**: Terminado lo anterior, cierra oprimiendo el mandato inferior explícito de "Guardar borrador" que asegurará internamente bajo la etiqueta y Tab *Borradores* a esta tarjeta naciente en espera de tu impulso futuro.
 
 ---
 
 ## 6. Resolución de Problemas
 
-### No puedo iniciar sesión
+### No es posible iniciar sesión en la Web App o formalizar Registro
+- Observa y detente si logras percatar en la validación local si has dejado tu **Email** trunco o existiese separación mediante un espacio tanto en arranque como cola del string en su casilla de relleno para **Clave**.
+- Operando a un nuevo registro exógeno o recuperación, visualiza tener mínimo 6 carácteres introducidos en cada cajón referencial a contraseñas emparejadas antes de pedir tramitar confirmaciones. 
+- Dispositivo en error 400 u omitido. Solicita siempre recuperación natural abriendo del acceso frontal el diálogo predeterminado "Problemas con mi cuenta".
 
-- Verifica que el campo **Email** y el campo **Clave** estén correctamente cumplimentados.
-- Comprueba que no haya espacios al principio o al final del correo electrónico.
-- Si has olvidado tu contraseña, toca el enlace **«¿Problemas con el usuario o la clave?»** en la pantalla de login.
-- Si el problema persiste, contacta con tu profesor o con la administración del centro.
+### Error interno bloqueándome crear y alojar Borradores (Alertas de color rojo)
+- El formulario obligatoriamente evalúa tener validación a tu fecha y semana de ejecución. Refresca un instante introduciendo un día si te marca esta pauta en alertas de cabecera en estado *missing*. 
 
-### La pantalla no carga o muestra un error de red
-
-- Comprueba que el dispositivo está conectado a la red Wi-Fi del centro.
-- Cierra la pestaña o la aplicación y vuelve a acceder.
-- Si el problema persiste, comunícalo al responsable del aula o al personal técnico del centro.
-
-### No veo mis pedidos o el inventario no carga
-
-- Espera unos segundos: los datos se cargan desde el servidor y puede haber un breve retraso.
-- Si el mensaje de error persiste, comprueba la conexión de red e inténtalo de nuevo.
-- Comunica el incidente al profesor si el problema no se resuelve.
+### Congelación de pantallas o mi catálogo de ingredientes figura en negro u oculto 
+- El software hace iteraciones seguras pidiendo bases actualizadas al centro, por favor espera un ciclo o recarga formalmente la pestaña un instante logrando arrancar. Notarás una marca explícita avisando "Cargando...".
+- Al persistir, confirma si logras retener vía Wi-Fi escolar u operativa tu señal.  
 
 ---
 
