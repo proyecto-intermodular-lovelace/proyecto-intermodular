@@ -1,43 +1,46 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsDateString, IsArray, ValidateNested, IsNumber, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateDeliveryNoteDto {
-  @ApiProperty({
-    example: 'REM-2025-001',
-    description: 'Número único de remito',
-  })
-  @IsString()
-  numeroRemito: string;
-
-  @ApiProperty({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'UUID del pedido',
-  })
+export class CreateDeliveryNoteItemDto {
+  @ApiProperty({ description: 'UUID del producto' })
   @IsUUID()
-  pedidoId: string;
+  productId: string;
 
-  @ApiProperty({
-    example: 'UPS Logística',
-    description: 'Nombre del transportista',
-  })
-  @IsString()
-  transportista: string;
+  @ApiProperty({ description: 'Cantidad recibida', example: 10 })
+  @IsNumber()
+  @Min(0.001)
+  qtyReceived: number;
 
-  @ApiProperty({
-    example: '1Z999AA10123456784',
-    description: 'Número de tracking',
-    required: false,
-  })
+  @ApiProperty({ description: 'Precio unitario', required: false })
+  @IsOptional()
+  @IsNumber()
+  unitPrice?: number;
+}
+
+export class CreateDeliveryNoteDto {
+  @ApiProperty({ example: 'ALB-2026-001', description: 'Código único del albarán', required: false })
   @IsOptional()
   @IsString()
-  numeroTracking?: string;
+  code?: string;
 
-  @ApiProperty({
-    example: 'Sin observaciones',
-    description: 'Observaciones sobre la entrega',
-    required: false,
-  })
+  @ApiProperty({ description: 'UUID del pedido asociado', required: false })
   @IsOptional()
-  @IsString()
-  observaciones?: string;
+  @IsUUID()
+  orderId?: string;
+
+  @ApiProperty({ description: 'UUID del proveedor' })
+  @IsUUID()
+  supplierId: string;
+
+  @ApiProperty({ description: 'Fecha/hora de recepción', example: '2026-03-11T10:00:00Z' })
+  @IsDateString()
+  receivedAt: string;
+
+  @ApiProperty({ description: 'Líneas del albarán', type: [CreateDeliveryNoteItemDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateDeliveryNoteItemDto)
+  items?: CreateDeliveryNoteItemDto[];
 }

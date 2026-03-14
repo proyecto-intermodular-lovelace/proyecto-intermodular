@@ -73,6 +73,8 @@ async function bootstrap() {
 
   const port = process.env.APP_PORT || 3000;
   await app.listen(port);
+  // expose app ref globally for dynamic access from controllers (used by import worker enqueue)
+  (global as any).__nestAppRef = app;
   console.log(JSON.stringify({
     level: 'INFO',
     timestamp: new Date().toISOString(),

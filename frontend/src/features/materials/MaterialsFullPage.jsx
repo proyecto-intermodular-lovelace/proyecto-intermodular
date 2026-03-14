@@ -4,7 +4,7 @@ import {
     Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus,
     Edit, Trash2, ArrowLeft, Download, AlertTriangle, ClipboardList, Eye
 } from 'lucide-react'
-import { Card, Button, Input } from '../../components/ui'
+import { Card, Button, Input, Tooltip } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { mockProducts, FOOD_CATEGORIES } from '../../services/products.mock'
 import { getMaterials } from '../../services/products.service'
@@ -30,8 +30,21 @@ export default function MaterialsFullPage() {
     const [detailMode, setDetailMode] = useState(null) // null | 'view' | 'edit'
     const [detailForm, setDetailForm] = useState(null)
     const [detailSaving, setDetailSaving] = useState(false)
+    const [detailFormError, setDetailFormError] = useState(null)
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+    // Dynamic lists from API
+    const [apiCategories, setApiCategories] = useState([])
+    const [apiSuppliers, setApiSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=MATERIAL').then(res => setApiCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setApiSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
 
     // Derived filter options
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria || ''))].filter(Boolean).sort(), [products])
@@ -107,10 +120,11 @@ export default function MaterialsFullPage() {
 
         if (dataToExport.length === 0) return
 
-        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo']
+        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo', 'tipo']
         const header = keys.join(',')
         const rows = dataToExport.map(p =>
             keys.map(k => {
+                if (k === 'tipo') return '"MATERIAL"'
                 const v = p[k]
                 if (typeof v === 'string') return `"${String(v).replace(/"/g, '""')}"`
                 return String(v)
@@ -129,7 +143,6 @@ export default function MaterialsFullPage() {
         URL.revokeObjectURL(url)
     }
 
-    const MATERIAL_CATEGORIES = ['Utensilios', 'Packaging', 'Limpieza', 'Seguridad', 'Mobiliario', 'Maquinaria', 'Papelería', 'Otros']
     const UNITS = ['unidad', 'kg', 'L', 'caja', 'm', 'm²']
 
     const openDetailView = (product) => {
@@ -142,10 +155,11 @@ export default function MaterialsFullPage() {
         setDetailProduct(product)
         setDetailForm({ ...product })
         setDetailMode('edit')
+        setDetailFormError(null)
     }
 
     const openDetailCreate = () => {
-        const empty = { nombre: '', sku: '', categoria: 'Utensilios', proveedor: '', stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad', rendimiento: 1.0, descripcion: '', activo: true }
+        const empty = { nombre: '', sku: '', categoryId: '', supplierId: '', stock: 0, stockMinimo: 0, precio: 0, unidad: 'unidad', rendimiento: 1.0, descripcion: '', activo: true }
         setDetailProduct(empty)
         setDetailForm(empty)
         setDetailMode('edit')
@@ -165,17 +179,41 @@ export default function MaterialsFullPage() {
         if (!detailForm) return
         setDetailSaving(true)
         try {
+            // Client-side validation: categoryId and supplierId must be UUIDs
+            const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+            if (!detailForm.categoryId || !uuidRe.test(detailForm.categoryId)) {
+                setDetailFormError('Selecciona una categoría válida (ID UUID).')
+                setDetailSaving(false)
+                return
+            }
+            if (!detailForm.supplierId || !uuidRe.test(detailForm.supplierId)) {
+                setDetailFormError('Selecciona un proveedor válido (ID UUID).')
+                setDetailSaving(false)
+                return
+            }
+            const payload = {
+                name: detailForm.nombre,
+                code: detailForm.sku || detailForm.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'MATERIAL',
+                unitType: detailForm.unidad,
+                unitPrice: detailForm.precio,
+                yieldPercent: detailForm.rendimiento,
+                relation: (detailForm.rendimiento || 0) / 100,
+                categoryId: detailForm.categoryId || undefined,
+                supplierId: detailForm.supplierId || null,
+                isActive: detailForm.activo !== false,
+            }
             const isExisting = detailForm.id && products.some(p => p.id === detailForm.id)
             if (isExisting) {
-                const res = await apiFetch(`/products/${detailForm.id}`, { method: 'PUT', body: JSON.stringify(detailForm) })
-                setProducts(products.map(p => p.id === res.id ? res : p))
+                await apiFetch(`/products/${detailForm.id}`, { method: 'PUT', body: JSON.stringify(payload) })
             } else {
-                const res = await apiFetch('/products', { method: 'POST', body: JSON.stringify(detailForm) })
-                setProducts([res, ...products])
+                await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) })
             }
+            const refreshed = await getMaterials(2000)
+            setProducts(refreshed)
             closeDetail()
         } catch (err) {
-            alert(`Error: ${err?.body?.message || err.message}`)
+            setDetailFormError(err?.body?.message || err.message || 'Error al guardar.')
         } finally {
             setDetailSaving(false)
         }
@@ -254,6 +292,11 @@ export default function MaterialsFullPage() {
 
                         {/* Modal form body */}
                         <div className="overflow-y-auto px-6 py-4 flex-1">
+                            {detailFormError && (
+                                <div className="mb-3">
+                                    <p className="text-sm text-red-600">{detailFormError}</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
 
                                 {/* Nombre */}
@@ -275,7 +318,10 @@ export default function MaterialsFullPage() {
 
                                 {/* SKU */}
                                 <div className="col-span-12 sm:col-span-6">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        SKU
+                                        <Tooltip text="Stock Keeping Unit — código único que identifica este material en el inventario (ej: MAT-0001)." asIcon />
+                                    </label>
                                     <input type="text" value={detailForm.sku} onChange={e => handleDetailChange('sku', e.target.value)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-blue-50/50 border-blue-100 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-75 disabled:cursor-not-allowed font-mono text-gray-800"
                                         placeholder="MAT-0001" />
@@ -308,14 +354,20 @@ export default function MaterialsFullPage() {
 
                                 {/* Stock Mínimo */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Stock Mínimo
+                                        <Tooltip text="Cantidad mínima de seguridad. Cuando el stock baja de este valor, el material se marca como 'stock crítico' en rojo." asIcon />
+                                    </label>
                                     <input type="number" value={detailForm.stockMinimo} onChange={e => handleDetailChange('stockMinimo', parseInt(e.target.value, 10) || 0)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-gray-50 border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
                                 </div>
 
                                 {/* Rendimiento */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Rendimiento
+                                        <Tooltip text="Factor de aprovechamiento del material. Para materiales no perecederos suele ser 1.0 (100% aprovechable)." asIcon />
+                                    </label>
                                     <input type="number" step="0.001" value={detailForm.rendimiento} onChange={e => handleDetailChange('rendimiento', parseFloat(e.target.value) || 0)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-lg bg-white border-gray-200 focus:ring-2 focus:ring-gray-500 outline-none disabled:opacity-75 font-medium text-gray-800" />
                                 </div>
@@ -323,19 +375,21 @@ export default function MaterialsFullPage() {
                                 {/* Categoría */}
                                 <div className="col-span-12 sm:col-span-6">
                                     <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
-                                    <select value={detailForm.categoria} onChange={e => handleDetailChange('categoria', e.target.value)} disabled={detailMode === 'view'}
+                                    <select value={detailForm.categoryId || ''} onChange={e => handleDetailChange('categoryId', e.target.value)} disabled={detailMode === 'view'}
                                         className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800">
                                         <option value="">Selecciona</option>
-                                        {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {apiCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
 
                                 {/* Proveedor */}
                                 <div className="col-span-12 sm:col-span-5">
                                     <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
-                                    <input type="text" value={detailForm.proveedor} onChange={e => handleDetailChange('proveedor', e.target.value)} disabled={detailMode === 'view'}
-                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
-                                        placeholder="Nombre del proveedor" />
+                                    <select value={detailForm.supplierId || ''} onChange={e => handleDetailChange('supplierId', e.target.value)} disabled={detailMode === 'view'}
+                                        className="w-full px-2 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800">
+                                        <option value="">Selecciona</option>
+                                        {apiSuppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Activo */}
@@ -344,6 +398,7 @@ export default function MaterialsFullPage() {
                                         <input type="checkbox" checked={detailForm.activo} onChange={e => handleDetailChange('activo', e.target.checked)} disabled={detailMode === 'view'}
                                             className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded" />
                                         <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                        <Tooltip text="Los materiales inactivos no aparecen en los pedidos ni en las listas de selección." asIcon />
                                     </label>
                                 </div>
                             </div>
@@ -377,10 +432,12 @@ export default function MaterialsFullPage() {
                 </button>
 
                 {lowStockCount > 0 && (
-                    <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
+                    <Tooltip text="Materiales cuyo stock actual está por debajo del mínimo configurado. Revisa la lista para reponer existencias.">
+                      <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
                         <AlertTriangle className="w-5 h-5 short:w-4 short:h-4" />
                         <span className="text-sm font-semibold short:text-xs">{lowStockCount} materiales con stock crítico</span>
-                    </div>
+                      </div>
+                    </Tooltip>
                 )}
             </div>
 
@@ -463,6 +520,7 @@ export default function MaterialsFullPage() {
                                     className="w-4 h-4 text-cifp-red focus:ring-cifp-red border-gray-300 rounded short:w-3 short:h-3"
                                 />
                                 <span className="text-sm font-medium text-cifp-neutral-700 short:text-xs">Solo stock crítico</span>
+                                <Tooltip text="Filtra solo materiales cuyo stock está por debajo del mínimo. Estos necesitan reposición." asIcon />
                             </label>
                         </div>
                     </div>
@@ -593,14 +651,16 @@ export default function MaterialsFullPage() {
                     </div>
 
                     <div className="flex items-center gap-3 short:gap-2">
-                        <Button
+                        <Tooltip text="Exporta los materiales visibles (o seleccionados) a un archivo CSV que podrás editar y re-importar.">
+                          <Button
                             variant="secondary"
                             onClick={handleExportCSV}
                             className="gap-2 short:h-8 short:text-xs short:px-2"
-                        >
+                          >
                             <Download className="w-4 h-4 short:w-3 short:h-3" />
                             Exportar CSV
-                        </Button>
+                          </Button>
+                        </Tooltip>
                     </div>
                 </div>
             </Card>

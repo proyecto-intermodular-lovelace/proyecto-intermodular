@@ -5,14 +5,15 @@ import {
   Body,
   Param,
   Put,
-  Patch,
   Delete,
   Query,
+  Req,
   ParseUUIDPipe,
   UseInterceptors,
   ClassSerializerInterceptor,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -33,7 +34,7 @@ import { UpdateDeliveryNoteDto } from './dto/update-delivery-note.dto';
 export class DeliveryNotesController {
   constructor(private readonly deliveryNotesService: DeliveryNotesService) {}
 
-  @ApiOperation({ summary: 'Obtener todas las notas de entrega (ADMIN)' })
+  @ApiOperation({ summary: 'Obtener todos los albaranes (ADMIN+)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @Get()
@@ -43,7 +44,7 @@ export class DeliveryNotesController {
     return this.deliveryNotesService.findAllPaginated(paginationDto);
   }
 
-  @ApiOperation({ summary: 'Obtener nota de entrega por ID' })
+  @ApiOperation({ summary: 'Obtener albarán por ID' })
   @Get(':id')
   async findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -51,27 +52,19 @@ export class DeliveryNotesController {
     return this.deliveryNotesService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Obtener notas de entrega de un pedido' })
-  @Get('pedido/:pedidoId')
-  async findByPedido(
-    @Param('pedidoId', new ParseUUIDPipe()) pedidoId: string,
-    @Query() paginationDto: PaginationQueryDto,
-  ): Promise<PaginatedResponse<DeliveryNote>> {
-    return this.deliveryNotesService.findByPedidoPaginated(
-      pedidoId,
-      paginationDto,
-    );
-  }
-
-  @ApiOperation({ summary: 'Crear nota de entrega (ADMIN)' })
+  @ApiOperation({ summary: 'Crear albarán (ADMIN+)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @Post()
-  async create(@Body() createDto: CreateDeliveryNoteDto): Promise<DeliveryNote> {
-    return this.deliveryNotesService.create(createDto);
+  async create(
+    @Body() createDto: CreateDeliveryNoteDto,
+    @Req() req: Request,
+  ): Promise<DeliveryNote> {
+    const user = req.user as { userId: string; role: UserRole };
+    return this.deliveryNotesService.create(createDto, user.userId);
   }
 
-  @ApiOperation({ summary: 'Actualizar nota de entrega (ADMIN)' })
+  @ApiOperation({ summary: 'Actualizar albarán (ADMIN+)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @Put(':id')
@@ -82,18 +75,7 @@ export class DeliveryNotesController {
     return this.deliveryNotesService.update(id, updateDto);
   }
 
-  @ApiOperation({ summary: 'Cambiar estado de entrega (ADMIN)' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-  @Patch(':id/status')
-  async updateStatus(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { estado: string },
-  ): Promise<DeliveryNote> {
-    return this.deliveryNotesService.updateStatus(id, body.estado as any);
-  }
-
-  @ApiOperation({ summary: 'Eliminar nota de entrega (SUPERADMIN)' })
+  @ApiOperation({ summary: 'Eliminar albarán (SUPERADMIN)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.SUPERADMIN)
   @Delete(':id')

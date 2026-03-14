@@ -19,18 +19,19 @@ function normalize(p) {
         id: p.id,
         sku: p.code ?? '',
         nombre: p.name ?? '',
-        categoria: p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material',
+        categoria: p.category?.name ?? '',
+        categoryId: p.categoryId ?? p.category?.id ?? '',
         productType: p.productType ?? '',
         unidad: p.unitType ?? '',
         precio: parseFloat(p.unitPrice) || 0,
         rendimiento: parseFloat(p.yieldPercent) || 0,
         relation: parseFloat(p.relation) || 0,
         activo: p.isActive ?? true,
-        // Campos que el schema real ya no tiene directamente:
-        stock: 0,          // nowstored in inventory table
-        stockMinimo: 0,          // not in schema — kept for UI compatibility
-        proveedor: p.supplierId ?? '',
-        descripcion: '',
+        stock: parseInt(p.stock) || 0,
+        stockMinimo: parseInt(p.stockMinimo) || 0,
+        proveedor: p.supplier?.nombre ?? '',
+        supplierId: p.supplierId ?? p.supplier?.id ?? '',
+        descripcion: p.description ?? '',
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
     }

@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -74,7 +75,16 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @Post()
-  async create(@Body() createProductDto: CreateProductDto): Promise<Product> {
+  async createProduct(@Req() req: any, @Body() createProductDto: CreateProductDto): Promise<Product> {
+    // Attach authenticated user as creator if available
+    try {
+      const userId = req?.user?.userId
+      if (userId) {
+        createProductDto.createdBy = userId
+      }
+    } catch (e) {
+      // ignore
+    }
     return this.productsService.create(createProductDto);
   }
 

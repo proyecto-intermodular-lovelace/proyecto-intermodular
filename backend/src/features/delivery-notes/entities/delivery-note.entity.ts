@@ -3,58 +3,39 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  Index,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
-
-export enum DeliveryStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DELIVERED = 'DELIVERED',
-  FAILED = 'FAILED',
-}
+import { Supplier } from '../../suppliers/entities/supplier.entity';
 
 @Entity('delivery_notes')
-@Index(['numeroRemito'], { unique: true })
-@Index(['estado'])
 export class DeliveryNote {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true, name: 'numero_remito' })
-  numeroRemito: string;
+  @Column({ type: 'varchar', length: 60, unique: true, nullable: true })
+  code: string | null;
 
-  @Column({ type: 'uuid', name: 'pedido_id' })
-  pedidoId: string;
+  @Column({ type: 'uuid', name: 'order_id', nullable: true })
+  orderId: string | null;
 
-  @ManyToOne('Order', 'deliveryNotes', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'pedido_id' })
-  pedido: any;
+  @Column({ type: 'uuid', name: 'supplier_id' })
+  supplierId: string;
 
-  @Column({
-    type: 'enum',
-    enum: DeliveryStatus,
-    default: DeliveryStatus.PENDING,
-  })
-  estado: DeliveryStatus;
+  @ManyToOne(() => Supplier, { eager: true })
+  @JoinColumn({ name: 'supplier_id' })
+  supplier: Supplier;
 
-  @Column({ type: 'varchar', length: 255 })
-  transportista: string;
+  @Column({ type: 'uuid', name: 'received_by' })
+  receivedBy: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'numero_tracking' })
-  numeroTracking: string | null;
-
-  @Column({ type: 'timestamptz', nullable: true, name: 'fecha_entrega' })
-  fechaEntrega: Date | null;
-
-  @Column({ type: 'text', nullable: true })
-  observaciones: string | null;
+  @Column({ type: 'timestamptz', name: 'received_at' })
+  receivedAt: Date;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  @OneToMany('DeliveryNoteItem', 'deliveryNote', { eager: true })
+  items: any[];
 }

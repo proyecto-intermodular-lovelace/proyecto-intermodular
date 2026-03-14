@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, X, Plus, Edit, Trash2, ArrowLeft, Download, AlertTriangle, Eye } from 'lucide-react'
-import { Card, Button, Input } from '../../components/ui'
+import { Card, Button, Input, Tooltip } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { mockProducts } from '../../services/products.mock'
 import { getIngredients } from '../../services/products.service'
@@ -23,6 +23,19 @@ export default function IngredientsFullPage() {
     const [isEditing, setIsEditing] = useState(false)
     const [editProduct, setEditProduct] = useState(null)
     const [detailSaving, setDetailSaving] = useState(false)
+    const [formError, setFormError] = useState(null)
+
+    // Dynamic lists from API
+    const [apiCategories, setApiCategories] = useState([])
+    const [apiSuppliers, setApiSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=INGREDIENT').then(res => setApiCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setApiSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
 
     // Get unique categories and providers from loaded products
     const categories = useMemo(() => [...new Set(products.map(p => p.categoria || ''))].filter(Boolean).sort(), [products])
@@ -129,9 +142,10 @@ export default function IngredientsFullPage() {
         if (dataToExport.length === 0) return
 
         // Build CSV
-        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo']
+        const keys = ['id', 'sku', 'nombre', 'categoria', 'proveedor', 'stock', 'unidad', 'precio', 'rendimiento', 'activo', 'tipo']
         const header = keys.join(',')
         const rows = dataToExport.map(p => keys.map(k => {
+            if (k === 'tipo') return '"INGREDIENT"'
             const v = p[k]
             if (typeof v === 'string') return `"${String(v).replace(/"/g, '""')}"`
             return String(v)
@@ -152,6 +166,7 @@ export default function IngredientsFullPage() {
     const handleOpenEdit = (product) => {
         setEditProduct({ descripcion: '', activo: true, ...product })
         setIsEditing(true)
+        setFormError(null)
     }
 
     const handleCloseEdit = () => {
@@ -166,24 +181,50 @@ export default function IngredientsFullPage() {
         if (!updated) return
         setDetailSaving(true)
         try {
-            // Determine create vs update by presence of id and whether it looks like a client-only id
+            // Validate required relations on client side to avoid backend 400
+            const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+            if (!updated.categoryId || !uuidRe.test(updated.categoryId)) {
+                setFormError('Selecciona una categoría válida (ID UUID) antes de guardar.')
+                setDetailSaving(false)
+                return
+            }
+            if (!updated.supplierId || !uuidRe.test(updated.supplierId)) {
+                setFormError('Selecciona un proveedor válido (ID UUID) antes de guardar.')
+                setDetailSaving(false)
+                return
+            }
+            const payload = {
+                name: updated.nombre,
+                code: updated.sku || updated.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'INGREDIENT',
+                unitType: updated.unidad,
+                unitPrice: updated.precio,
+                yieldPercent: updated.rendimiento,
+                relation: (updated.rendimiento || 0) / 100,
+                categoryId: updated.categoryId || undefined,
+                supplierId: updated.supplierId || null,
+                isActive: updated.activo !== false,
+            }
             const isExisting = updated.id && products.some(p => p.id === updated.id && !String(p.id).startsWith('id_'))
             if (isExisting) {
                 const res = await apiFetch(`/products/${updated.id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(updated),
+                    body: JSON.stringify(payload),
                 })
-                setProducts(products.map(p => p.id === res.id ? res : p))
+                // Reload from backend to get eagerly-loaded relations
+                const refreshed = await getIngredients(2000)
+                setProducts(refreshed)
             } else {
-                const res = await apiFetch('/products', {
+                await apiFetch('/products', {
                     method: 'POST',
-                    body: JSON.stringify(updated),
+                    body: JSON.stringify(payload),
                 })
-                setProducts([res, ...products])
+                const refreshed = await getIngredients(2000)
+                setProducts(refreshed)
             }
             handleCloseEdit()
-        } catch (err) {
-            alert(`Error: ${err?.body?.message || err.message}`)
+            } catch (err) {
+            setFormError(err?.body?.message || err.message || 'Error al guardar.')
         } finally {
             setDetailSaving(false)
         }
@@ -250,6 +291,11 @@ export default function IngredientsFullPage() {
 
                         {/* Modal form body */}
                         <div className="overflow-y-auto px-6 py-4 flex-1">
+                            {formError && (
+                                <div className="mb-3">
+                                    <p className="text-sm text-red-600">{formError}</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-12 gap-x-3 gap-y-3">
 
                                 {/* Nombre */}
@@ -282,7 +328,10 @@ export default function IngredientsFullPage() {
 
                                 {/* SKU */}
                                 <div className="col-span-12 sm:col-span-6">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">SKU</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        SKU
+                                        <Tooltip text="Stock Keeping Unit — código único que identifica este producto en el inventario (ej: ING-0001)." asIcon />
+                                    </label>
                                     <input
                                         type="text"
                                         value={editProduct.sku || ''}
@@ -332,7 +381,10 @@ export default function IngredientsFullPage() {
 
                                 {/* Stock Mínimo */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Stock Mínimo</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Stock Mínimo
+                                        <Tooltip text="Cantidad mínima de seguridad. Cuando el stock actual baja de este valor, el producto se marca en rojo como 'stock crítico'." asIcon />
+                                    </label>
                                     <input
                                         type="number"
                                         value={editProduct.stockMinimo ?? 0}
@@ -343,7 +395,10 @@ export default function IngredientsFullPage() {
 
                                 {/* Rendimiento */}
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1">Rendimiento (%)</label>
+                                    <label className="block text-[10px] uppercase font-bold text-gray-800 mb-1 flex items-center gap-1">
+                                        Rendimiento (%)
+                                        <Tooltip text="Porcentaje de producto aprovechable tras mermas. Ej: 80% significa que de 1 kg bruto se aprovechan 800 g." asIcon />
+                                    </label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -356,25 +411,27 @@ export default function IngredientsFullPage() {
                                 {/* Categoría */}
                                 <div className="col-span-12 sm:col-span-6">
                                     <label className="block text-[10px] uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max">Categoría</label>
-                                    <input
-                                        type="text"
-                                        value={editProduct.categoria || ''}
-                                        onChange={e => setEditProduct({ ...editProduct, categoria: e.target.value })}
+                                    <select
+                                        value={editProduct.categoryId || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, categoryId: e.target.value })}
                                         className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none bg-white font-medium text-gray-800"
-                                        placeholder="Ej: Lácteos, Carnes, Verduras..."
-                                    />
+                                    >
+                                        <option value="">Selecciona</option>
+                                        {apiCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Proveedor */}
                                 <div className="col-span-12 sm:col-span-5">
                                     <label className="block text-[10px] uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max">Proveedor</label>
-                                    <input
-                                        type="text"
-                                        value={editProduct.proveedor || ''}
-                                        onChange={e => setEditProduct({ ...editProduct, proveedor: e.target.value })}
+                                    <select
+                                        value={editProduct.supplierId || ''}
+                                        onChange={e => setEditProduct({ ...editProduct, supplierId: e.target.value })}
                                         className="w-full px-3 h-9 text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white font-medium text-gray-800"
-                                        placeholder="Nombre del proveedor"
-                                    />
+                                    >
+                                        <option value="">Selecciona</option>
+                                        {apiSuppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Activo */}
@@ -387,6 +444,7 @@ export default function IngredientsFullPage() {
                                             className="w-4 h-4 text-cifp-blue focus:ring-cifp-blue border-gray-300 rounded"
                                         />
                                         <span className="text-[10px] font-medium text-gray-700 whitespace-nowrap">Activo</span>
+                                        <Tooltip text="Los productos inactivos no aparecen en los pedidos de alumnos ni en las listas de selección." asIcon />
                                     </label>
                                 </div>
 
@@ -420,10 +478,12 @@ export default function IngredientsFullPage() {
                 </button>
 
                 {lowStockCount > 0 && (
-                    <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
+                    <Tooltip text="Productos cuyo stock actual está por debajo del mínimo configurado. Revisa la lista para reponer existencias.">
+                      <div className="flex items-center gap-2 bg-cifp-red-light/10 text-cifp-red px-4 py-2 rounded-lg short:px-2 short:py-1">
                         <AlertTriangle className="w-5 h-5 short:w-4 short:h-4" />
                         <span className="text-sm font-semibold short:text-xs">{lowStockCount} productos con stock crítico</span>
-                    </div>
+                      </div>
+                    </Tooltip>
                 )}
             </div>
 
@@ -519,6 +579,7 @@ export default function IngredientsFullPage() {
                                     className="w-4 h-4 text-cifp-red focus:ring-cifp-red border-gray-300 rounded short:w-3 short:h-3"
                                 />
                                 <span className="text-sm font-medium text-cifp-neutral-700 short:text-[10px] whitespace-nowrap">Stock crítico</span>
+                                <Tooltip text="Filtra solo productos cuyo stock actual está por debajo de su stock mínimo. Estos productos necesitan reposición." asIcon />
                             </label>
                         </div>
                     </div>
@@ -681,14 +742,16 @@ export default function IngredientsFullPage() {
                     </div>
 
                     <div className="flex items-center gap-3 short:gap-2">
-                        <Button
+                        <Tooltip text="Exporta los productos visibles (o seleccionados) a un archivo CSV que podrás editar y re-importar.">
+                          <Button
                             variant="secondary"
                             onClick={handleExportCSV}
                             className="gap-2 short:h-8 short:text-xs short:px-2"
-                        >
+                          >
                             <Download className="w-4 h-4 short:w-3 short:h-3" />
                             Exportar CSV
-                        </Button>
+                          </Button>
+                        </Tooltip>
                     </div>
                 </div>
             </Card>

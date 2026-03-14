@@ -12,8 +12,8 @@ const EMPTY_INGREDIENT = {
     precio: 0,
     stock: 0,
     rendimiento: 80,
-    categoria: '',
-    proveedor: ''
+    categoryId: '',
+    supplierId: ''
 }
 
 const UNITS = ['kg', 'unidad', 'L']
@@ -33,8 +33,16 @@ export default function IngredientDetailPage() {
     const [saving, setSaving] = useState(false)
     const [isEditMode, setIsEditMode] = useState(isCreate)
 
-    const categories = ['Ingrediente']
-    const suppliers = ['Proveedor General']
+    const [categories, setCategories] = useState([])
+    const [suppliers, setSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=INGREDIENT').then(res => setCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
 
     useEffect(() => {
         if (isCreate) {
@@ -55,8 +63,8 @@ export default function IngredientDetailPage() {
                         precio: data.precio || 0,
                         stock: data.stock || 0,
                         rendimiento: data.rendimiento || 80,
-                        categoria: data.categoria ?? '',
-                        proveedor: data.proveedor ?? ''
+                        categoryId: data.categoryId ?? '',
+                        supplierId: data.supplierId ?? ''
                     })
                 } else {
                     setNotFound(true)
@@ -75,11 +83,24 @@ export default function IngredientDetailPage() {
         if (!isAdmin) return
         setSaving(true)
         try {
+            const payload = {
+                name: form.nombre,
+                code: form.sku || form.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'INGREDIENT',
+                unitType: form.unidad,
+                unitPrice: form.precio,
+                    description: form.descripcion,
+                    stock: form.stock,
+                yieldPercent: form.rendimiento,
+                relation: form.rendimiento / 100,
+                categoryId: form.categoryId,
+                supplierId: form.supplierId || null,
+            }
             if (isCreate) {
-                await apiFetch('/products', { method: 'POST', body: JSON.stringify(form) })
+                await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) })
                 navigate('/products')
             } else {
-                await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(form) })
+                await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
                 setIsEditMode(false)
             }
         } catch (err) {
@@ -252,13 +273,13 @@ export default function IngredientDetailPage() {
                     <div className="col-span-12 sm:col-span-6">
                         <label className="block text-[10px] md:text-xs uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max mb-0">Categoría</label>
                         <select
-                            value={form.categoria}
-                            onChange={e => handleChange('categoria', e.target.value)}
+                            value={form.categoryId}
+                            onChange={e => handleChange('categoryId', e.target.value)}
                             disabled={!isEditMode || !isAdmin}
                             className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
                         >
                             <option value="">Selecciona</option>
-                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
 
@@ -266,13 +287,13 @@ export default function IngredientDetailPage() {
                     <div className="col-span-12 sm:col-span-6">
                         <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max mb-0">Proveedor</label>
                         <select
-                            value={form.proveedor}
-                            onChange={e => handleChange('proveedor', e.target.value)}
+                            value={form.supplierId}
+                            onChange={e => handleChange('supplierId', e.target.value)}
                             disabled={!isEditMode || !isAdmin}
                             className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
                         >
                             <option value="">Selecciona</option>
-                            {suppliers.map(s => <option key={s} value={s}>{s}</option>)}
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                         </select>
                     </div>
                 </div>

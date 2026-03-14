@@ -5,10 +5,10 @@ import { StatusBadge, STATUS_LABELS, getMonday, formatDate } from './orderUtils.
 import { useAuth } from '../../contexts/AuthProvider'
 
 const TABS = [
-  { key: 'mine',      label: 'Mis pedidos' },
-  { key: 'SUBMITTED', label: 'Para revisar' },
-  { key: 'APPROVED',  label: 'Aprobados' },
-  { key: null,        label: 'Todos' },
+  { key: 'mine',      label: 'Mis pedidos',   title: 'Pedidos que tú has creado como profesor' },
+  { key: 'SUBMITTED', label: 'Para revisar',  title: 'Pedidos enviados por alumnos pendientes de tu aprobación' },
+  { key: 'APPROVED',  label: 'Aprobados',     title: 'Pedidos que ya has aprobado, pendientes de consolidar' },
+  { key: null,        label: 'Todos',         title: 'Todos los pedidos del sistema, sin filtro de estado' },
 ]
 
 export default function TeacherOrdersView() {
@@ -142,6 +142,7 @@ export default function TeacherOrdersView() {
           <button
             key={tab.key ?? 'all'}
             onClick={() => setActiveTab(tab.key)}
+            title={tab.title}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -244,7 +245,7 @@ function TeacherOrderCard({ order, expanded, onToggle, onApprove, onReject, onSu
             <StatusBadge status={order.status} />
             <span className="text-sm font-semibold text-gray-900">{creatorName}</span>
             {isOwn && (
-              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Mío</span>
+              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium" title="Este pedido lo creaste tú">Mío</span>
             )}
             <span className="text-sm text-gray-500">· Semana {formatDate(order.weekStart)}</span>
           </div>
@@ -287,6 +288,7 @@ function TeacherOrderCard({ order, expanded, onToggle, onApprove, onReject, onSu
               <button
                 onClick={onReject}
                 disabled={actionLoading}
+                title="Rechaza el pedido y lo marca como cancelado. Esta acción es irreversible."
                 className="inline-flex items-center gap-1.5 bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
               >
                 <XCircle size={13} />
@@ -317,8 +319,8 @@ function TeacherOrderCard({ order, expanded, onToggle, onApprove, onReject, onSu
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-200">
                   <th className="text-left pb-2 font-medium">Producto</th>
-                  <th className="text-right pb-2 font-medium">Cant. solicitada</th>
-                  <th className="text-right pb-2 font-medium">Cant. aprobada</th>
+                  <th className="text-right pb-2 font-medium" title="Cantidad que pidió el alumno">Cant. solicitada</th>
+                  <th className="text-right pb-2 font-medium" title="Cantidad aprobada por el profesor; puede ser menor a la solicitada">Cant. aprobada</th>
                   <th className="text-left pb-2 font-medium pl-4">Notas</th>
                 </tr>
               </thead>
@@ -382,7 +384,7 @@ function CreateOrderModal({ onClose, onCreated }) {
 
   function addProduct(p) {
     if (items.some(i => i.productId === p.id)) return
-    setItems(prev => [...prev, { productId: p.id, productName: p.name, unitType: p.unitType ?? '', qtyRequested: 1, notes: '' }])
+    setItems(prev => [...prev, { productId: p.id, productName: p.name, unitType: p.unitType ?? '', stock: p.stock ?? 0, stockMinimo: p.stockMinimo ?? 0, qtyRequested: 1, notes: '' }])
     setProductSearch('')
     setProducts([])
     setShowProductSearch(false)
@@ -459,7 +461,10 @@ function CreateOrderModal({ onClose, onCreated }) {
                         <button key={p.id} onClick={() => addProduct(p)}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 flex items-center justify-between">
                           <span className="font-medium text-gray-800">{p.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">{p.unitType} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}</span>
+                          <span className="text-xs text-gray-400 ml-2 flex items-center gap-2">
+                            {p.unitType} · {p.productType === 'INGREDIENT' ? 'Ingrediente' : 'Material'}
+                            <span className={`font-semibold ${(p.stock ?? 0) <= (p.stockMinimo ?? 0) ? 'text-red-500' : 'text-emerald-600'}`}>Stock: {p.stock ?? 0}</span>
+                          </span>
                         </button>
                       ))
                     }
@@ -474,7 +479,7 @@ function CreateOrderModal({ onClose, onCreated }) {
                     <div key={item.productId} className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{item.productName}</p>
-                        <p className="text-xs text-gray-400">{item.unitType}</p>
+                        <p className="text-xs text-gray-400">{item.unitType} · <span className={item.stock <= item.stockMinimo ? 'text-red-500 font-semibold' : 'text-emerald-600 font-semibold'}>Stock: {item.stock}</span></p>
                       </div>
                       <input type="number" min="0.001" step="0.001" value={item.qtyRequested}
                         onChange={e => updateItem(idx, 'qtyRequested', e.target.value)}
@@ -495,6 +500,7 @@ function CreateOrderModal({ onClose, onCreated }) {
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
           <button onClick={handleSave} disabled={saving}
+            title="Guarda el pedido como borrador; podrás enviarlo después"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
             {saving ? 'Guardando...' : 'Guardar borrador'}
           </button>
@@ -514,6 +520,8 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
       productId: it.productId,
       productName: it.product?.name ?? it.productId,
       unitType: it.product?.unitType ?? '',
+      stock: it.product?.stock ?? 0,
+      stockMinimo: it.product?.stockMinimo ?? 0,
       qtyRequested: Number(it.qtyRequested),
       qtyApproved: it.qtyApproved != null ? Number(it.qtyApproved) : Number(it.qtyRequested),
       notes: it.notes ?? '',
@@ -548,7 +556,7 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
 
   function addProduct(p) {
     if (items.some(i => i.productId === p.id)) return
-    setItems(prev => [...prev, { productId: p.id, productName: p.name, unitType: p.unitType ?? '', qtyRequested: 1, qtyApproved: 1, notes: '' }])
+    setItems(prev => [...prev, { productId: p.id, productName: p.name, unitType: p.unitType ?? '', stock: p.stock ?? 0, stockMinimo: p.stockMinimo ?? 0, qtyRequested: 1, qtyApproved: 1, notes: '' }])
     setProductSearch('')
     setProducts([])
     setShowProductSearch(false)
@@ -634,7 +642,10 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
                         <button key={p.id} onClick={() => addProduct(p)}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 flex items-center justify-between">
                           <span className="font-medium text-gray-800">{p.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">{p.unitType}</span>
+                          <span className="text-xs text-gray-400 ml-2 flex items-center gap-2">
+                            {p.unitType}
+                            <span className={`font-semibold ${(p.stock ?? 0) <= (p.stockMinimo ?? 0) ? 'text-red-500' : 'text-emerald-600'}`}>Stock: {p.stock ?? 0}</span>
+                          </span>
                         </button>
                       ))
                     }
@@ -655,7 +666,7 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="text-sm font-medium text-gray-800">{item.productName}</p>
-                      <p className="text-xs text-gray-400">{item.unitType}</p>
+                      <p className="text-xs text-gray-400">{item.unitType} · <span className={item.stock <= item.stockMinimo ? 'text-red-500 font-semibold' : 'text-emerald-600 font-semibold'}>Stock: {item.stock ?? '—'}</span></p>
                     </div>
                     <button onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 p-1">
                       <Trash2 size={14} />
@@ -671,7 +682,7 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
                     </div>
                     {isSubmitted && (
                       <div>
-                        <label className="block text-xs text-blue-600 mb-1 font-medium">Aprobada ✓</label>
+                        <label className="block text-xs text-blue-600 mb-1 font-medium" title="Puedes reducir la cantidad si el stock es limitado">Aprobada ✓</label>
                         <input type="number" min="0" step="0.001" value={item.qtyApproved}
                           onChange={e => updateItem(idx, 'qtyApproved', e.target.value)}
                           className="w-full border border-blue-300 bg-blue-50 rounded-md px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -695,11 +706,13 @@ function TeacherEditModal({ order, onClose, onSaved, onApproved }) {
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
           <button onClick={() => handleSave(false)} disabled={saving}
+            title="Guarda los cambios sin cambiar el estado del pedido"
             className="inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors">
             {saving ? '...' : 'Solo guardar'}
           </button>
           {isSubmitted && (
             <button onClick={() => handleSave(true)} disabled={saving}
+              title="Guarda los ajustes y aprueba el pedido en un solo paso"
               className="inline-flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
               <CheckCircle size={16} />
               {saving ? 'Guardando...' : 'Guardar y aprobar'}

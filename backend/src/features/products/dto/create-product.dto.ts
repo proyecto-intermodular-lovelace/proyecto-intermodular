@@ -42,6 +42,22 @@ export class CreateProductDto {
   @IsUUID()
   createdBy?: string;
 
+  @ApiProperty({ example: 'Descripción del producto', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string;
+
+  @ApiProperty({ example: 0, required: false })
+  @IsOptional()
+  @IsNumber()
+  stock?: number;
+
+  @ApiProperty({ example: 0, required: false })
+  @IsOptional()
+  @IsNumber()
+  stockMinimo?: number;
+
   @ApiProperty({ example: 80.5, required: false })
   @IsOptional()
   @IsNumber()

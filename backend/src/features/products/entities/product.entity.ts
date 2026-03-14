@@ -6,7 +6,11 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Supplier } from '../../suppliers/entities/supplier.entity';
+import { Category } from '../../categories/entities/category.entity';
 
 export enum ProductType {
   INGREDIENT = 'INGREDIENT',
@@ -25,7 +29,7 @@ export class Product {
   @Column({ type: 'varchar', length: 200 })
   name: string;
 
-  @Column({ type: 'enum', enum: ProductType, name: 'product_type' })
+  @Column({ type: 'enum', enum: ProductType, enumName: 'product_type', name: 'product_type' })
   productType: ProductType;
 
   @Column({ type: 'varchar', length: 30, name: 'unit_type' })
@@ -37,8 +41,16 @@ export class Product {
   @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
   supplierId: string | null;
 
+  @ManyToOne(() => Supplier, { eager: true })
+  @JoinColumn({ name: 'supplier_id' })
+  supplier: Supplier;
+
   @Column({ type: 'uuid', name: 'category_id' })
   categoryId: string;
+
+  @ManyToOne(() => Category, { eager: true })
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, name: 'yield_percent', nullable: true })
   yieldPercent: number | null;
@@ -48,6 +60,15 @@ export class Product {
 
   @Column({ type: 'date', name: 'expires_at', nullable: true })
   expiresAt: string | null;
+
+  @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'integer', name: 'stock', default: 0 })
+  stock: number;
+
+  @Column({ type: 'integer', name: 'stock_minimo', nullable: true })
+  stockMinimo: number | null;
 
   @Column({ type: 'uuid', name: 'created_by' })
   createdBy: string;

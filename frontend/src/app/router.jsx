@@ -5,6 +5,7 @@ import DashboardPage from '../features/dashboard/DashboardPage'
 import IngredientsSummaryPage from '../features/ingredients/IngredientsSummaryPage'
 import IngredientsFullPage from '../features/ingredients/IngredientsFullPage'
 import IngredientDetailPage from '../features/ingredients/IngredientDetailPage'
+import ProductsImportPage from '../features/products/ProductsImportPage'
 import MaterialsSummaryPage from '../features/materials/MaterialsSummaryPage'
 import MaterialsFullPage from '../features/materials/MaterialsFullPage'
 import MaterialDetailPage from '../features/materials/MaterialDetailPage'
@@ -14,6 +15,11 @@ import SuppliersFullPage from '../features/suppliers/SuppliersFullPage'
 import SupplierDetailPage from '../features/suppliers/SupplierDetailPage'
 import ReturnsPage from '../features/returns/ReturnsPage'
 import OrdersPage from '../features/orders/OrdersPage'
+import DeliveryNotesPage from '../features/delivery-notes/DeliveryNotesPage'
+import CategoriesPage from '../features/categories/CategoriesPage'
+import RecipesSummaryPage from '../features/recipes/RecipesSummaryPage'
+import RecipesFullPage from '../features/recipes/RecipesFullPage'
+import RecipeDetailPage from '../features/recipes/RecipeDetailPage'
 import MainLayout from '../layouts/MainLayout'
 import RequireAuth from '../components/RequireAuth'
 import RecoverPage from '../features/auth/RecoverPage'
@@ -34,6 +40,7 @@ function AppRouter() {
                 {/* Ingredientes */}
                 <Route path="products" element={<IngredientsSummaryPage />} />
                 <Route path="products/full" element={<IngredientsFullPage />} />
+                <Route path="products/import" element={<ProductsImportPage />} />
                 <Route path="products/new" element={<IngredientDetailPage />} />
                 <Route path="products/:id" element={<IngredientDetailPage />} />
 
@@ -54,6 +61,18 @@ function AppRouter() {
 
                 {/* Pedidos */}
                 <Route path="orders" element={<OrdersPage />} />
+
+                {/* Albaranes */}
+                <Route path="delivery-notes" element={<DeliveryNotesPage />} />
+
+                {/* Categorías */}
+                <Route path="categories" element={<CategoriesPage />} />
+
+                {/* Recetas */}
+                <Route path="recipes" element={<RecipesSummaryPage />} />
+                <Route path="recipes/full" element={<RecipesFullPage />} />
+                <Route path="recipes/new" element={<RecipeDetailPage />} />
+                <Route path="recipes/:id" element={<RecipeDetailPage />} />
 
                 <Route path="profile" element={<ProfilePage />} />
             </Route>

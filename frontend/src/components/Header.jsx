@@ -36,6 +36,7 @@ export default function Header({ showMenuButton = false, onMenuClick }) {
               onClick={onMenuClick}
               className="p-2 rounded-lg hover:bg-white/10 transition-colors lg:hidden"
               aria-label="Abrir menú de navegación"
+              title="Abrir menú lateral de navegación"
             >
               <Menu className="w-6 h-6 text-white" />
             </button>
@@ -59,6 +60,7 @@ export default function Header({ showMenuButton = false, onMenuClick }) {
             className="flex items-center gap-2 px-3 py-1 rounded-md hover:bg-white/10"
             aria-haspopup="true"
             aria-expanded={open}
+            title="Menú de usuario: perfil, tema y cerrar sesión"
           >
             <User className="w-5 h-5 text-white" />
             <span className="text-sm text-white">
@@ -80,6 +82,7 @@ export default function Header({ showMenuButton = false, onMenuClick }) {
               <button
                 className="w-full text-left px-4 py-2 hover:bg-cifp-neutral-50 flex items-center gap-2"
                 onClick={() => { toggleTheme(); setOpen(false) }}
+                title="Alterna entre el tema claro y oscuro de la interfaz"
               >
                 <Sun className="w-4 h-4 mr-2" /> Modo claro/oscuro
               </button>

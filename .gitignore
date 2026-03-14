@@ -82,6 +82,11 @@ tmp/
 *.tsbuildinfo
 
 # --------------------------------
+#  IMPORT JOB REPORTS (generated)
+# --------------------------------
+backend/data/imports/
+
+# --------------------------------
 #  COVERAGE (testing)
 # --------------------------------
 coverage/

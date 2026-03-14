@@ -5,11 +5,6 @@ import { useAuth } from '../../contexts/AuthProvider'
 import { getProductById } from '../../services/products.service'
 import apiFetch from '../../services/api'
 
-const MATERIAL_CATEGORIES = [
-    'Utensilios', 'Packaging', 'Limpieza', 'Seguridad',
-    'Mobiliario', 'Maquinaria', 'Papelería', 'Otros'
-]
-
 const UNITS = ['unidad', 'kg', 'L', 'caja', 'm', 'm²']
 
 const EMPTY_MATERIAL = {
@@ -21,8 +16,8 @@ const EMPTY_MATERIAL = {
     stock: 0,
     stockMinimo: 0,
     rendimiento: 1.0,
-    categoria: 'Utensilios',
-    proveedor: '',
+    categoryId: '',
+    supplierId: '',
     activo: true,
 }
 
@@ -40,6 +35,17 @@ export default function MaterialDetailPage() {
     const [notFound, setNotFound] = useState(false)
     const [saving, setSaving] = useState(false)
     const [isEditMode, setIsEditMode] = useState(isCreate)
+
+    const [categories, setCategories] = useState([])
+    const [suppliers, setSuppliers] = useState([])
+
+    useEffect(() => {
+        apiFetch('/categories?type=MATERIAL').then(res => setCategories(Array.isArray(res) ? res : []))
+        apiFetch('/suppliers?limit=500').then(res => {
+            const items = res?.data ?? res
+            setSuppliers(Array.isArray(items) ? items : [])
+        })
+    }, [])
 
     useEffect(() => {
         if (isCreate) {
@@ -62,8 +68,8 @@ export default function MaterialDetailPage() {
                         stock: data.stock || 0,
                         stockMinimo: data.stockMinimo || 0,
                         rendimiento: data.rendimiento || 1.0,
-                        categoria: data.categoria ?? 'Utensilios',
-                        proveedor: data.proveedor ?? '',
+                        categoryId: data.categoryId ?? '',
+                        supplierId: data.supplierId ?? '',
                         activo: data.activo ?? true,
                     })
                 } else {
@@ -83,11 +89,26 @@ export default function MaterialDetailPage() {
         if (!isAdmin) return
         setSaving(true)
         try {
+            const payload = {
+                name: form.nombre,
+                code: form.sku || form.nombre.substring(0, 20).toUpperCase().replace(/\s+/g, '-'),
+                productType: 'MATERIAL',
+                unitType: form.unidad,
+                unitPrice: form.precio,
+                    description: form.descripcion,
+                    stock: form.stock,
+                    stockMinimo: form.stockMinimo,
+                yieldPercent: form.rendimiento,
+                relation: form.rendimiento / 100,
+                categoryId: form.categoryId,
+                supplierId: form.supplierId || null,
+                isActive: form.activo,
+            }
             if (isCreate) {
-                await apiFetch('/products', { method: 'POST', body: JSON.stringify(form) })
+                await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) })
                 navigate('/inventory')
             } else {
-                await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(form) })
+                await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
                 setIsEditMode(false)
             }
         } catch (err) {
@@ -274,27 +295,28 @@ export default function MaterialDetailPage() {
                     <div className="col-span-12 sm:col-span-6">
                         <label className="block text-[10px] md:text-xs uppercase font-bold text-white bg-green-600 px-2 rounded-t w-max mb-0">Categoría</label>
                         <select
-                            value={form.categoria}
-                            onChange={e => handleChange('categoria', e.target.value)}
+                            value={form.categoryId}
+                            onChange={e => handleChange('categoryId', e.target.value)}
                             disabled={!isEditMode || !isAdmin}
                             className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-green-600 focus:ring-2 focus:ring-green-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
                         >
                             <option value="">Selecciona</option>
-                            {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
 
                     {/* Proveedor */}
                     <div className="col-span-12 sm:col-span-5">
                         <label className="block text-[10px] md:text-xs uppercase font-bold text-gray-900 bg-purple-200 px-2 rounded-t w-max mb-0">Proveedor</label>
-                        <input
-                            type="text"
-                            value={form.proveedor}
-                            onChange={e => handleChange('proveedor', e.target.value)}
+                        <select
+                            value={form.supplierId}
+                            onChange={e => handleChange('supplierId', e.target.value)}
                             disabled={!isEditMode || !isAdmin}
                             className="w-full px-2 py-0 h-8 md:h-10 md:py-2 text-xs md:text-sm border rounded-b-lg rounded-tr-lg border-purple-200 focus:ring-2 focus:ring-purple-500 outline-none disabled:opacity-75 bg-white font-medium text-gray-800"
-                            placeholder="Nombre del proveedor"
-                        />
+                        >
+                            <option value="">Selecciona</option>
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                        </select>
                     </div>
 
                     {/* Activo */}
