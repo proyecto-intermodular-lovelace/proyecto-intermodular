@@ -23,6 +23,10 @@ import RecipeDetailPage from '../features/recipes/RecipeDetailPage'
 import MainLayout from '../layouts/MainLayout'
 import RequireAuth from '../components/RequireAuth'
 import RecoverPage from '../features/auth/RecoverPage'
+import PrivacyPage from '../features/legal/PrivacyPage'
+import CopyrightPage from '../features/legal/CopyrightPage'
+import AboutLovelacePage from '../features/legal/AboutLovelacePage'
+
 
 function AppRouter() {
     return (
@@ -31,6 +35,10 @@ function AppRouter() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/recover" element={<RecoverPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
+            <Route path="/copyright" element={<CopyrightPage />} />
+            <Route path="/lovelace" element={<AboutLovelacePage />} />
+
 
             {/* Rutas protegidas */}
             <Route path="/" element={<RequireAuth><MainLayout /></RequireAuth>}>
