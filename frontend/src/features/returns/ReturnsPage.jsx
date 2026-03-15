@@ -3,6 +3,7 @@ import { Archive, ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthProvider'
 import apiFetch from '../../services/api'
+import showToast from '../../services/toast'
 import { getAllProducts, getIngredients, getMaterials, getCategories } from '../../services/products.service'
 
 export default function ReturnsPage() {
@@ -20,6 +21,7 @@ export default function ReturnsPage() {
   const [query, setQuery] = useState('')
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   // Fetch products based on typeFilter
   useEffect(() => {
@@ -35,14 +37,14 @@ export default function ReturnsPage() {
         if (mounted) setProducts(items)
       } catch (err) {
         console.error(err)
-        alert(err?.body?.message || err.message || 'Error al obtener productos')
+        showToast(err?.body?.message || err.message || 'Error al obtener productos', 'error')
       } finally {
         if (mounted) setLoading(false)
       }
     }
     fetcher()
     return () => { mounted = false }
-  }, [typeFilter])
+  }, [typeFilter, reloadKey])
 
   const categories = useMemo(() => getCategories(products), [products])
 
@@ -56,14 +58,22 @@ export default function ReturnsPage() {
   }, [products, category, query])
 
   const handleApply = async (product) => {
-    if (!isAdmin) return alert('Acción restringida: requiere permisos de administrador')
+    if (!isAdmin) return showToast('Acción restringida: requiere permisos de administrador', 'error')
 
-    const cantidadRaw = window.prompt('Cantidad a aplicar (número):', '1')
-    if (!cantidadRaw) return
+    // Open confirmation modal with selected product
+    setSelectedForApply({ product, cantidad: '1', motivo: mode === 'merma' ? 'Merma / Baja' : 'Devolución' })
+    setShowApplyModal(true)
+  }
+
+  // Modal state for apply action
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [selectedForApply, setSelectedForApply] = useState(null)
+
+  const confirmApply = async () => {
+    if (!selectedForApply) return
+    const { product, cantidad: cantidadRaw, motivo } = selectedForApply
     const cantidad = parseFloat(cantidadRaw)
-    if (isNaN(cantidad) || cantidad <= 0) return alert('Cantidad inválida')
-
-    const motivo = window.prompt('Motivo (opcional):', mode === 'merma' ? 'Merma / Baja' : 'Devolución') || ''
+    if (isNaN(cantidad) || cantidad <= 0) return showToast('Cantidad inválida', 'error')
 
     try {
       const endpoint = mode === 'merma' ? '/inventory/salida' : '/inventory/entrada'
@@ -71,15 +81,37 @@ export default function ReturnsPage() {
         method: 'POST',
         body: JSON.stringify({ productoId: product.id, cantidad, motivo })
       })
-      alert('Operación registrada correctamente')
-      // refresh products if needed
-      // re-fetch by toggling typeFilter (simple approach)
-      setTypeFilter(prev => prev)
+      showToast('Operación registrada correctamente', 'success')
+      setShowApplyModal(false)
+      setSelectedForApply(null)
+      // trigger refresh of products and movements
+      setReloadKey(k => k + 1)
     } catch (err) {
       console.error(err)
-      alert(err?.body?.message || err.message || 'Error al registrar movimiento')
+      showToast(err?.body?.message || err.message || 'Error al registrar movimiento', 'error')
     }
   }
+
+  // Movements list
+  const [movements, setMovements] = useState([])
+  const [loadingMovements, setLoadingMovements] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const fetchMovements = async () => {
+      try {
+        setLoadingMovements(true)
+        const res = await apiFetch('/inventory?limit=20&page=1')
+        if (mounted) setMovements(res.items || res)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        if (mounted) setLoadingMovements(false)
+      }
+    }
+    fetchMovements()
+    return () => { mounted = false }
+  }, [reloadKey])
 
   return (
     <div className="h-full w-full max-w-4xl mx-auto flex flex-col">
@@ -96,6 +128,31 @@ export default function ReturnsPage() {
         <h1 className="text-lg md:text-xl font-bold text-gray-800 uppercase truncate">Bajas y Devoluciones</h1>
 
         <div className="w-24" />
+      </div>
+      <div className="mt-4 w-full max-w-4xl mx-auto">
+        <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-800 mb-2">Últimas operaciones</h3>
+          {loadingMovements ? (
+            <div className="text-xs text-gray-500">Cargando movimientos…</div>
+          ) : movements && movements.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2 text-sm text-gray-700">
+              {movements.map(m => (
+                <div key={m.id} className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="font-medium">{m.producto?.nombre || m.productoId}</div>
+                    <div className="text-xs text-gray-500">{new Date(m.createdAt).toLocaleString()} — {m.motivo || ''}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">{m.tipo === 'ENTRY' ? 'Entrada' : m.tipo === 'EXIT' ? 'Salida' : m.tipo === 'ADJUSTMENT' ? 'Ajuste' : 'Pérdida'}</div>
+                    <div className="text-xs text-gray-600">{m.cantidad}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500">No hay movimientos recientes.</div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white/50 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-4 flex-grow overflow-auto">
@@ -163,6 +220,31 @@ export default function ReturnsPage() {
           )}
         </div>
       </div>
+      {typeof document !== 'undefined' && showApplyModal && selectedForApply && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowApplyModal(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-2 text-lg font-bold text-gray-800">{mode === 'merma' ? 'Merma / Baja' : 'Devolución'}</h2>
+            <div className="text-sm text-gray-600 mb-4">Producto: <span className="font-semibold">{selectedForApply.product.nombre || selectedForApply.product.sku}</span></div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Cantidad</label>
+                <input type="number" step="0.01" min="0.01" value={selectedForApply.cantidad} onChange={(e) => setSelectedForApply(prev => ({ ...prev, cantidad: e.target.value }))} className="w-full rounded-lg border px-3 py-2 text-sm" />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Motivo (opcional)</label>
+                <input value={selectedForApply.motivo} onChange={(e) => setSelectedForApply(prev => ({ ...prev, motivo: e.target.value }))} className="w-full rounded-lg border px-3 py-2 text-sm" />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => { setShowApplyModal(false); setSelectedForApply(null) }} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Cancelar</button>
+              <button type="button" onClick={confirmApply} className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

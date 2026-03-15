@@ -15,6 +15,7 @@ import {
   deleteRecipeAllergen,
 } from '../../services/recipes.service'
 import apiFetch from '../../services/api'
+import showToast from '../../services/toast'
 
 const EMPTY_RECIPE = {
   name: '',
@@ -211,6 +212,7 @@ export default function RecipeDetailPage() {
       .finally(() => setLoading(false))
   }, [id, isCreate])
 
+
   const refreshRecipeDetail = async () => {
     if (isCreate || !id) return
     const data = await getRecipeById(id)
@@ -268,7 +270,7 @@ export default function RecipeDetailPage() {
   const handleImageUpload = (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      alert('Selecciona un archivo de imagen valido')
+      showToast('Selecciona un archivo de imagen valido', 'error')
       return
     }
 
@@ -277,7 +279,7 @@ export default function RecipeDetailPage() {
       const result = typeof reader.result === 'string' ? reader.result : ''
       if (!result) return
       if (result.length > 550000) {
-        alert('La imagen es demasiado grande. Usa una imagen de menor tamano.')
+        showToast('La imagen es demasiado grande. Usa una imagen de menor tamano.', 'error')
         return
       }
       handleChange('dishImageUrl', result)
@@ -314,6 +316,12 @@ export default function RecipeDetailPage() {
         requiredEquipment: recipe.requiredEquipment || null,
       }
 
+      // Client-side validation to avoid invalid payloads that may trigger DB errors
+      if (!payload.name || payload.name.length < 2) throw new Error('Nombre de receta inválido (mínimo 2 caracteres)')
+      if (!['FACIL', 'MEDIA', 'DIFICIL'].includes(payload.difficulty)) throw new Error('Dificultad inválida')
+      if (!payload.yieldQuantity || Number(payload.yieldQuantity) < 0.1) throw new Error('Rendimiento inválido (mínimo 0.1)')
+      if (!payload.yieldUnit) throw new Error('Unidad de rendimiento requerida')
+
       if (isCreate) {
         const created = await createRecipe(payload)
         const createdId = created?.id || created?.data?.id
@@ -328,7 +336,9 @@ export default function RecipeDetailPage() {
         setIsEditMode(false)
       }
     } catch (err) {
-      alert(err?.body?.message || err.message || 'Error al guardar la receta')
+      // Show detailed message when available
+      const msg = err?.body?.message || err?.message || 'Error al guardar la receta'
+      showToast(msg, 'error')
     } finally {
       setSaving(false)
     }
@@ -403,9 +413,20 @@ export default function RecipeDetailPage() {
   }
 
   const toggleAllergen = async (name) => {
-    if (isCreate) return
     const normalized = normalizeText(name)
-    const current = allergens.find((row) => normalizeText(row.name || row.allergenName) === normalized)
+    const current = allergens.find((row) => normalizeText(row.name || row.allergenName || row.allergen?.name) === normalized)
+
+    // If creating a new recipe, keep allergen selection local until saved
+    if (isCreate) {
+      if (current) {
+        setAllergens((prev) => prev.filter((row) => normalizeText(row.name || row.allergenName || row.allergen?.name) !== normalized))
+      } else {
+        const allergen = findAllergenByName(name)
+        const newRow = allergen ? { id: `local-${normalizeText(name)}`, allergenName: allergen.name } : { id: `local-${normalizeText(name)}`, allergenName: name }
+        setAllergens((prev) => [...prev, newRow])
+      }
+      return
+    }
 
     if (current) {
       askConfirm({
@@ -439,9 +460,16 @@ export default function RecipeDetailPage() {
   }
 
   const selectAllAllergens = async () => {
-    if (isCreate) return
-
     const matrixNames = ALLERGEN_MATRIX.flat()
+    if (isCreate) {
+      const toAdd = matrixNames.filter((name) => !isAllergenChecked(name)).map((name) => {
+        const allergen = findAllergenByName(name)
+        return allergen ? { id: `local-${normalizeText(name)}`, allergenName: allergen.name } : { id: `local-${normalizeText(name)}`, allergenName: name }
+      })
+      setAllergens((prev) => [...prev, ...toAdd])
+      return
+    }
+
     const missing = matrixNames
       .filter((name) => !isAllergenChecked(name))
       .map((name) => ({ name, allergen: findAllergenByName(name) }))
@@ -461,9 +489,12 @@ export default function RecipeDetailPage() {
   }
 
   const deselectAllAllergens = async () => {
-    if (isCreate) return
-
     const matrixSet = new Set(ALLERGEN_MATRIX.flat().map((name) => normalizeText(name)))
+    if (isCreate) {
+      setAllergens((prev) => prev.filter((row) => !matrixSet.has(normalizeText(row.name || row.allergenName || row.allergen?.name))))
+      return
+    }
+
     const present = allergens.filter((row) => matrixSet.has(normalizeText(row.name || row.allergenName)))
 
     try {
@@ -659,6 +690,13 @@ export default function RecipeDetailPage() {
             <div className="grid grid-cols-1 gap-3 bg-white p-3 md:grid-cols-2">
               <div className="space-y-2 rounded-lg border border-gray-300 p-2">
                 <div className="grid grid-cols-2 gap-2">
+                    <label className={labelCls}>Nombre</label>
+                    <input
+                      value={recipe.name || ''}
+                      onChange={(e) => handleChange('name', e.target.value)}
+                      disabled={!isEditMode || !isAdmin}
+                      className="border px-2 py-1 text-sm"
+                    />
                   <label className={labelCls}>Restaurante</label>
                   <input
                     value={recipe.restaurantName || ''}
@@ -783,7 +821,7 @@ export default function RecipeDetailPage() {
           <Card className="border border-gray-300 p-0">
             <div className={`flex items-center justify-between ${diffColor.bg} px-3 py-2`}>
               <h2 className="text-sm font-black uppercase text-white">Ingredientes</h2>
-              {!isCreate && isAdmin && (
+              {isAdmin && (
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -866,7 +904,7 @@ export default function RecipeDetailPage() {
           <Card className="border border-gray-300 p-0">
             <div className={`flex items-center justify-between ${diffColor.bg} px-3 py-2`}>
               <h2 className="text-sm font-black uppercase text-white">Materiales</h2>
-              {!isCreate && isAdmin && (
+              {isAdmin && (
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -1066,7 +1104,7 @@ export default function RecipeDetailPage() {
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleAllergen(allergenName)}
-                        disabled={isCreate || !isAdmin}
+                        disabled={!isAdmin}
                         className="h-4 w-4"
                       />
                       <span>{allergenName}</span>
@@ -1100,123 +1138,175 @@ export default function RecipeDetailPage() {
         onCancel={closeConfirm}
       />
 
-      {typeof document !== 'undefined' && showAddItem && !isCreate && createPortal(
+      {typeof document !== 'undefined' && showAddItem && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddItem(false)}>
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar ingrediente</h2>
-            <form onSubmit={handleAddItem} className="space-y-4">
+            {isCreate ? (
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Producto</label>
-                <select
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                >
-                  <option value="">Seleccionar...</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.code} - {product.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedProduct && (
-                <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                  Unidad: {selectedProduct.unitType || '-'} | Coste unidad: {formatMoney(selectedProduct.unitPrice)}
+                <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar ingrediente</h2>
+                <p className="mb-4 text-sm text-gray-600">Primero guarda la receta para poder añadir ingredientes. Pulsa "Guardar receta" y luego podrás añadirlos.</p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddItem(false)}
+                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => { await handleSubmit({ preventDefault: () => {} }); setShowAddItem(false) }}
+                    disabled={saving}
+                    className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
+                  >
+                    Guardar receta
+                  </button>
                 </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Cantidad</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={selectedQuantity}
-                  onChange={(e) => setSelectedQuantity(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
               </div>
+            ) : (
+              <>
+                <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar ingrediente</h2>
+                <form onSubmit={handleAddItem} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Producto</label>
+                    <select
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {products.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.code} - {product.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddItem(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !selectedProductId || !selectedQuantity}
-                  className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
-                >
-                  Agregar
-                </button>
-              </div>
-            </form>
+                  {selectedProduct && (
+                    <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                      Unidad: {selectedProduct.unitType || '-'} | Coste unidad: {formatMoney(selectedProduct.unitPrice)}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Cantidad</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={selectedQuantity}
+                      onChange={(e) => setSelectedQuantity(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddItem(false)}
+                      className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving || !selectedProductId || !selectedQuantity}
+                      className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>,
         document.body,
       )}
 
-      {typeof document !== 'undefined' && showAddMaterial && !isCreate && createPortal(
+      {typeof document !== 'undefined' && showAddMaterial && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddMaterial(false)}>
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar material</h2>
-            <form onSubmit={handleAddMaterial} className="space-y-4">
+            {isCreate ? (
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Material</label>
-                <select
-                  value={selectedMaterialId}
-                  onChange={(e) => setSelectedMaterialId(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                >
-                  <option value="">Seleccionar...</option>
-                  {materialProducts.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.code} - {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedMaterial && (
-                <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                  Unidad: {selectedMaterial.unitType || '-'} | Coste unidad: {formatMoney(selectedMaterial.unitPrice)}
+                <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar material</h2>
+                <p className="mb-4 text-sm text-gray-600">Primero guarda la receta para poder añadir materiales. Pulsa "Guardar receta" y luego podrás añadirlos.</p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMaterial(false)}
+                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => { await handleSubmit({ preventDefault: () => {} }); setShowAddMaterial(false) }}
+                    disabled={saving}
+                    className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
+                  >
+                    Guardar receta
+                  </button>
                 </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Cantidad</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={selectedMaterialQuantity}
-                  onChange={(e) => setSelectedMaterialQuantity(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
               </div>
+            ) : (
+              <>
+                <h2 className="mb-4 text-lg font-bold text-gray-800">Agregar material</h2>
+                <form onSubmit={handleAddMaterial} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Material</label>
+                    <select
+                      value={selectedMaterialId}
+                      onChange={(e) => setSelectedMaterialId(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {materialProducts.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.code} - {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddMaterial(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !selectedMaterialId || !selectedMaterialQuantity}
-                  className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
-                >
-                  Agregar
-                </button>
-              </div>
-            </form>
+                  {selectedMaterial && (
+                    <div className="rounded border bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                      Unidad: {selectedMaterial.unitType || '-'} | Coste unidad: {formatMoney(selectedMaterial.unitPrice)}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Cantidad</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={selectedMaterialQuantity}
+                      onChange={(e) => setSelectedMaterialQuantity(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddMaterial(false)}
+                      className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving || !selectedMaterialId || !selectedMaterialQuantity}
+                      className="rounded-lg bg-cifp-blue px-4 py-2 text-sm font-semibold text-white hover:bg-cifp-blue-dark disabled:opacity-60"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>,
         document.body,

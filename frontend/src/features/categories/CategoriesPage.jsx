@@ -3,6 +3,7 @@ import { Tags, Plus, Trash2, Edit, X, Check, Search } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import apiFetch from '../../services/api'
+import showToast from '../../services/toast'
 
 export default function CategoriesPage() {
     const { user } = useAuth()
@@ -76,19 +77,32 @@ export default function CategoriesPage() {
             closeForm()
             fetchCategories()
         } catch (err) {
-            alert(err?.body?.message || err.message || 'Error al guardar categoría')
+            showToast(err?.body?.message || err.message || 'Error al guardar categoría', 'error')
         } finally {
             setSaving(false)
         }
     }
 
-    const handleDelete = async (id) => {
-        if (!confirm('¿Eliminar esta categoría? Solo es posible si ningún producto la usa.')) return
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState(null)
+
+    const handleDelete = (id) => {
+        setDeleteTarget(id)
+        setShowConfirm(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return setShowConfirm(false)
         try {
-            await apiFetch(`/categories/${id}`, { method: 'DELETE' })
+            await apiFetch(`/categories/${deleteTarget}`, { method: 'DELETE' })
+            setShowConfirm(false)
+            setDeleteTarget(null)
+            showToast('Categoría eliminada', 'success')
             fetchCategories()
         } catch (err) {
-            alert(err?.body?.message || err.message || 'No se puede eliminar (hay productos asociados)')
+            setShowConfirm(false)
+            setDeleteTarget(null)
+            showToast(err?.body?.message || err.message || 'No se puede eliminar (hay productos asociados)', 'error')
         }
     }
 
@@ -261,6 +275,18 @@ export default function CategoriesPage() {
                             >
                                 <Check className="w-4 h-4" /> {saving ? 'Guardando...' : 'Guardar'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowConfirm(false)}>
+                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-semibold mb-2">Confirmar eliminación</h3>
+                        <p className="text-sm text-gray-600 mb-4">¿Eliminar esta categoría? Solo es posible si ningún producto la usa.</p>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => { setShowConfirm(false); setDeleteTarget(null) }} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Cancelar</button>
+                            <button onClick={confirmDelete} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Eliminar</button>
                         </div>
                     </div>
                 </div>

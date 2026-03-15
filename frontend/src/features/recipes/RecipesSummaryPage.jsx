@@ -4,7 +4,6 @@ import { ChefHat, ArrowRight, Search, Plus } from 'lucide-react'
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { getRecipes } from '../../services/recipes.service'
-import { mockRecipes } from '../../services/recipes.mock'
 
 export default function RecipesSummaryPage() {
   const navigate = useNavigate()
@@ -19,14 +18,14 @@ export default function RecipesSummaryPage() {
     let mounted = true
     getRecipes(500)
       .then(data => {
-        if (mounted && Array.isArray(data) && data.length > 0) {
+        if (mounted && Array.isArray(data)) {
           setRecipes(data)
         } else if (mounted) {
-          setRecipes(mockRecipes)
+          setRecipes([])
         }
       })
       .catch(() => {
-        if (mounted) setRecipes(mockRecipes)
+        if (mounted) setRecipes([])
       })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }

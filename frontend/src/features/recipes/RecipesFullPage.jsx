@@ -4,7 +4,6 @@ import { ChefHat, Plus, Trash2, Edit, X, Check, Search, ArrowUpDown, ArrowUp, Ar
 import { Card, Button, Input } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthProvider'
 import { getRecipes } from '../../services/recipes.service'
-import { mockRecipes } from '../../services/recipes.mock'
 import apiFetch from '../../services/api'
 
 export default function RecipesFullPage() {
@@ -48,8 +47,8 @@ export default function RecipesFullPage() {
   const fetchRecipes = () => {
     setLoading(true)
     getRecipes(2000)
-      .then(data => setRecipes(data))
-      .catch(() => setRecipes(mockRecipes))
+      .then(data => setRecipes(Array.isArray(data) ? data : []))
+      .catch(() => setRecipes([]))
       .finally(() => setLoading(false))
   }
 
@@ -284,7 +283,7 @@ export default function RecipesFullPage() {
           <h1 className="text-3xl font-bold text-cifp-neutral-900 short:text-xl">Recetas</h1>
         </div>
         {isAdmin && (
-          <Button onClick={openCreate} className="flex items-center gap-2">
+          <Button onClick={() => navigate('/recipes/new')} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             <span>Nueva Receta</span>
           </Button>
