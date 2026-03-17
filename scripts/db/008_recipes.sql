@@ -1,7 +1,8 @@
--- scripts/db/007_recipes.sql
+-- scripts/db/008_recipes.sql
 -- Tablas para gestión de recetas y alérgenos
 -- Autor: Sistema de Recetas
 -- Fecha: 2026-03-12
+-- Actualizado: 2026-03-17
 
 BEGIN;
 
