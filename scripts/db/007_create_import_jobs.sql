@@ -11,5 +11,9 @@ CREATE TABLE IF NOT EXISTS import_jobs (
   errors jsonb,
   result_path varchar(500),
   created_by uuid,
+  default_product_type varchar(20),
   created_at timestamptz DEFAULT now()
 );
+
+-- Idempotent: add column if table already existed without it
+ALTER TABLE import_jobs ADD COLUMN IF NOT EXISTS default_product_type varchar(20);

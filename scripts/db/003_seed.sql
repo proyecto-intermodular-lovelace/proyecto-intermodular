@@ -1,5 +1,5 @@
 -- ============================================================
--- 002_seed.sql  –  Seed inicial del Proyecto Lovelace
+-- 003_seed.sql  –  Seed inicial del Proyecto Lovelace
 -- Generado automáticamente por generate_seed.js
 -- Basado en estructura_lovelace.sql (schema real)
 -- ============================================================
