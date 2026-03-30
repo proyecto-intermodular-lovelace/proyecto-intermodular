@@ -15,13 +15,33 @@ export class InventoryService {
   ) {}
 
   async findAllPaginated(
-    paginationDto: PaginationQueryDto,
-  ): Promise<PaginatedResponse<InventoryMovement>> {
-    return this.paginationService.paginateRepository(
-      this.movementsRepository,
-      paginationDto,
-    );
-  }
+  paginationDto: PaginationQueryDto,
+): Promise<PaginatedResponse<InventoryMovement>> {
+  const page = paginationDto.page || 1;
+  const limit = Math.min(paginationDto.limit || 10, 100);
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await this.movementsRepository.findAndCount({
+    relations: ['producto'],
+    skip,
+    take: limit,
+    order: { createdAt: 'DESC' },
+  });
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+}
 
   async findAll(): Promise<InventoryMovement[]> {
     return this.movementsRepository.find({

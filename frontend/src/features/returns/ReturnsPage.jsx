@@ -102,7 +102,7 @@ export default function ReturnsPage() {
       try {
         setLoadingMovements(true)
         const res = await apiFetch('/inventory?limit=20&page=1')
-        if (mounted) setMovements(res.items || res)
+        if (mounted) setMovements(res.data || [])
       } catch (err) {
         console.error(err)
       } finally {
@@ -139,7 +139,7 @@ export default function ReturnsPage() {
               {movements.map(m => (
                 <div key={m.id} className="flex items-center justify-between gap-2">
                   <div>
-                    <div className="font-medium">{m.producto?.nombre || m.productoId}</div>
+                    <div className="font-medium">{m.producto?.name || m.productoId}</div>
                     <div className="text-xs text-gray-500">{new Date(m.createdAt).toLocaleString()} — {m.motivo || ''}</div>
                   </div>
                   <div className="text-right">
