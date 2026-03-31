@@ -17,7 +17,8 @@
 | `user_role` | `SUPERADMIN`, `ADMIN`, `USER` | Roles de acceso al sistema |
 | `product_type` | `INGREDIENT`, `MATERIAL` | Distingue ingredientes alimentarios de material inventariable |
 | `order_status` | `DRAFT`, `SUBMITTED`, `APPROVED`, `MERGED`, `ORDERED`, `RECEIVED`, `CANCELLED` | Ciclo de vida de un pedido |
-| `movement_type` | `IN`, `OUT`, `RETURN`, `WASTE`, `ADJUSTMENT` | Tipo de movimiento de stock |
+| `movement_type` | `IN`, `OUT`, `RETURN`, `WASTE`, `ADJUSTMENT` | Tipo de movimiento en la tabla `stock_movements` (esquema legacy) |
+| `inventory_movement_type` | `ENTRY`, `EXIT`, `ADJUSTMENT`, `LOSS` | Tipo de movimiento en la tabla `inventory_movements` (usada por el backend) |
 | `incident_section` | `INGREDIENTES`, `MATERIALES`, `USUARIOS`, `PEDIDOS`, `ALBARANES`, `PROVEEDORES`, `OTRO` | Sección sobre la que se reporta una incidencia |
 
 ---
@@ -77,17 +78,35 @@ Tabla que mantiene el **stock actual** de cada producto (1:1 con `products`).
 
 #### `stock_movements`
 
-Histórico de todos los cambios de stock. Cada movimiento es **inmutable** (nunca se borran).
+Tabla de histórico de cambios de stock del esquema inicial (`001_init.sql`). Utiliza el enum `movement_type` con valores `IN`, `OUT`, `RETURN`, `WASTE`, `ADJUSTMENT`.
 
 | Columna | Tipo | Descripción |
 |---|---|---|
 | `id` | `uuid` PK | Identificador del movimiento |
 | `product_id` | `uuid` FK → `products` | Producto afectado |
-| `movement_type` | `movement_type` | Tipo: entrada, salida, devolución, merma o ajuste |
+| `movement_type` | `movement_type` | Tipo: IN, OUT, RETURN, WASTE o ADJUSTMENT |
 | `qty` | `numeric(12,3)` | Cantidad (siempre positiva) |
 | `reason` | `text` | Motivo o descripción libre |
 | `created_by` | `uuid` FK → `users` | Usuario que registró el movimiento |
 | `created_at` | `timestamptz` | Fecha y hora del movimiento |
+
+#### `inventory_movements`
+
+Tabla de movimientos de inventario añadida en `010_inventory_movements.sql`. Es la tabla que utiliza el backend (entidad `InventoryMovement` de TypeORM). Las columnas siguen la convención de nombres en español.
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | `uuid` PK | Identificador del movimiento |
+| `producto_id` | `uuid` FK → `products` | Producto afectado |
+| `tipo` | `inventory_movement_type` | Tipo: `ENTRY`, `EXIT`, `ADJUSTMENT` o `LOSS` |
+| `cantidad` | `int` | Cantidad del movimiento |
+| `motivo` | `text` | Motivo o descripción libre (opcional) |
+| `usuario_id` | `uuid` FK → `users` | Usuario que registró el movimiento (opcional) |
+| `observaciones` | `text` | Observaciones adicionales (opcional) |
+| `created_at` | `timestamptz` | Fecha y hora del movimiento |
+| `updated_at` | `timestamptz` | Última actualización del registro |
+
+> Los tipos de movimiento registrados por el frontend en la pantalla de Bajas y Devoluciones son `EXIT` (merma/baja, vía `POST /api/inventory/salida`) y `ENTRY` (devolución, vía `POST /api/inventory/entrada`).
 
 ### 3.4 Pedidos (`orders` y `order_items`)
 
@@ -138,7 +157,27 @@ Registro de la recepción física de mercancía. Vinculado opcionalmente a un pe
 - **`studies`:** Ciclos formativos (p. ej., "Cocina y Gastronomía").
 - **`classes`:** Grupos dentro de un ciclo (nivel + código de grupo + estudio).
 
-### 3.8 Incidencias (`incidents`)
+### 3.8 Trabajos de Importación (`import_jobs`)
+
+Tabla añadida en `007_create_import_jobs.sql`. Almacena el estado de los procesos de importación masiva de productos desde ficheros CSV, gestionados por el worker de importación en background.
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | `uuid` PK | Identificador único del job |
+| `filename` | `varchar(255)` | Nombre del fichero importado |
+| `content` | `text` | Contenido CSV del fichero |
+| `status` | `varchar(32)` | Estado del proceso (p. ej., `PENDING`, `PROCESSING`, `DONE`, `ERROR`) |
+| `total_rows` | `integer` | Total de filas del CSV |
+| `processed` | `integer` | Filas procesadas hasta el momento |
+| `created_count` | `integer` | Productos creados |
+| `updated_count` | `integer` | Productos actualizados |
+| `errors` | `jsonb` | Array de errores por fila (opcional) |
+| `result_path` | `varchar(500)` | Ruta al fichero de resultado (opcional) |
+| `created_by` | `uuid` | Usuario que lanzó la importación |
+| `default_product_type` | `varchar(20)` | Tipo de producto por defecto (`INGREDIENT` / `MATERIAL`) |
+| `created_at` | `timestamptz` | Fecha de creación del job |
+
+### 3.9 Incidencias (`incidents`)
 
 Permite a cualquier usuario registrar una incidencia en cualquier sección del sistema. Un administrador puede marcarla como revisada (`is_reviewed`, `reviewed_by`, `reviewed_at`).
 
@@ -156,7 +195,8 @@ users ────────────────────────�
   ├──────────────────────── orders ──── order_items ──< products
   │                           │                           │
   │                           │ (merged_into_order_id)    ├─── inventory
-  │                           │ (auto-referencia)         └─── stock_movements
+  │                           │ (auto-referencia)         ├─── stock_movements
+  │                           │                           └─── inventory_movements
   │
   ├──────────────────── delivery_notes ── delivery_note_items
   │
@@ -185,6 +225,10 @@ Al levantar el stack Docker por primera vez, PostgreSQL ejecuta automáticamente
 4. **`004_fix_suppliers_inventory.sql`** — Correcciones de integridad sobre el inventario de proveedores.
 5. **`005_make_supplier_nullable.sql`** — Permite que `supplier_id` en `products` sea nulo.
 6. **`006_seed_suppliers.sql`** — Inserta datos de prueba de proveedores adicionales.
+7. **`007_create_import_jobs.sql`** — Crea la tabla `import_jobs` para el worker de importación CSV.
+8. **`008_recipes.sql`** — Crea las tablas `recipes`, `recipe_items`, `allergens` y `recipe_allergens`.
+9. **`009_fix_supplier_encoding.sql`** — Correcciones de codificación UTF-8 en nombres de proveedores existentes.
+10. **`010_inventory_movements.sql`** — Crea el enum `inventory_movement_type` y la tabla `inventory_movements` usada por el backend.
 
 ### Contraseñas en los datos de prueba
 
