@@ -95,12 +95,15 @@ El backend se organiza en módulos independientes, siguiendo la arquitectura mod
 |---|---|---|
 | `AuthModule` | `/api/auth` | Autenticación, emisión y validación de JWT |
 | `UsersModule` | `/api/users` | Gestión de usuarios y perfiles |
-| `ProductsModule` | `/api/products` | CRUD de productos (ingredientes y materiales) |
-| `InventoryModule` | `/api/inventory` | Movimientos de stock e inventario actual |
+| `ProductsModule` | `/api/products` | CRUD de productos (ingredientes y materiales); incluye importación CSV en `/api/products/import` |
+| `InventoryModule` | `/api/inventory` | Registro y consulta de movimientos (`inventory_movements`); `GET /api/inventory` devuelve respuesta paginada `{ data, meta }` |
 | `OrdersModule` | `/api/orders` | Creación y ciclo de vida de pedidos |
 | `SuppliersModule` | `/api/suppliers` | Gestión de proveedores |
 | `DeliveryNotesModule` | `/api/delivery-notes` | Albaranes de recepción de mercancía |
 | `IncidentsModule` | `/api/incidents` | Registro y revisión de incidencias |
+| `RecipesModule` | `/api/recipes` | CRUD de recetas con ingredientes y alérgenos |
+| `AllergensModule` | `/api/allergens` | Gestión del catálogo de alérgenos |
+| `CategoriesModule` | `/api/categories` | Gestión de categorías de productos |
 | `ScaleModule` | `/api/scale` | Integración con báscula de pesaje |
 | `HealthModule` | `/api/health` | Estado de salud del servicio |
 

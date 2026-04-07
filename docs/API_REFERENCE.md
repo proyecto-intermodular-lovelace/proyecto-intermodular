@@ -47,9 +47,11 @@ Content-Type: application/json
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+
+> El campo se llama `accessToken` (camelCase). La respuesta no incluye datos del usuario; para obtenerlos usa `GET /api/auth/me`.
 
 ### Paso 2 — Incluir el token en las peticiones
 
@@ -72,7 +74,9 @@ Gestión de sesiones y contraseñas.
 |---|---|---|---|
 | `POST` | `/api/auth/login` | Iniciar sesión y obtener JWT | No |
 | `POST` | `/api/auth/register` | Registrar nuevo usuario | No |
-| `POST` | `/api/auth/recover` | Solicitar recuperación de contraseña | No |
+| `POST` | `/api/auth/recover` | Solicitar recuperación de contraseña por email | No |
+| `GET` | `/api/auth/me` | Obtener perfil del usuario autenticado | Sí |
+| `POST` | `/api/auth/change-password` | Cambiar contraseña (requiere contraseña actual) | Sí |
 
 ### 4.2 Users — `/api/users`
 
@@ -99,13 +103,57 @@ Gestión unificada de ingredientes (`INGREDIENT`) y materiales (`MATERIAL`).
 
 ### 4.4 Inventory — `/api/inventory`
 
-Consulta de stock actual y registro de movimientos.
+Consulta y registro de movimientos de inventario. Todos los endpoints de escritura requieren rol `ADMIN` o `SUPERADMIN`.
 
 | Método | Ruta | Descripción | Auth |
 |---|---|---|---|
-| `GET` | `/api/inventory` | Obtener stock actual de todos los productos | Sí |
-| `GET` | `/api/inventory/:productId` | Obtener stock de un producto | Sí |
-| `POST` | `/api/inventory/movement` | Registrar un movimiento de stock | Sí |
+| `GET` | `/api/inventory` | Listar movimientos paginados (respuesta `{ data, meta }`) | Sí (ADMIN) |
+| `GET` | `/api/inventory/:id` | Obtener un movimiento por ID | Sí |
+| `GET` | `/api/inventory/producto/:productoId` | Listar movimientos de un producto (paginado) | Sí |
+| `POST` | `/api/inventory/entrada` | Registrar entrada de stock (tipo `ENTRY`) | Sí (ADMIN) |
+| `POST` | `/api/inventory/salida` | Registrar salida de stock / merma (tipo `EXIT`) | Sí (ADMIN) |
+| `POST` | `/api/inventory/ajuste` | Registrar ajuste de stock (tipo `ADJUSTMENT`) | Sí (ADMIN) |
+| `DELETE` | `/api/inventory/:id` | Eliminar un movimiento | Sí (SUPERADMIN) |
+
+#### Respuesta paginada de `GET /api/inventory`
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "productoId": "uuid",
+      "producto": { "id": "uuid", "name": "Harina de trigo", ... },
+      "tipo": "EXIT",
+      "cantidad": 5,
+      "motivo": "Merma / Baja",
+      "usuarioId": "uuid",
+      "observaciones": null,
+      "createdAt": "2026-03-31T10:00:00.000Z",
+      "updatedAt": "2026-03-31T10:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 42,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 3,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+#### Body de los endpoints de escritura (`entrada`, `salida`, `ajuste`)
+
+```json
+{
+  "productoId": "uuid",
+  "cantidad": 5,
+  "motivo": "Descripción opcional",
+  "usuarioId": "uuid (opcional)"
+}
+```
 
 ### 4.5 Orders — `/api/orders`
 

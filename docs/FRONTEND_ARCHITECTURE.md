@@ -36,7 +36,7 @@ frontend/src/
 │   ├── materials/           # Summary, Full, Detail pages
 │   ├── orders/
 │   ├── profile/
-│   ├── returns/
+│   ├── returns/             # ReturnsPage: bajas (EXIT) y devoluciones (ENTRY)
 │   └── suppliers/           # Summary, Full, Detail pages
 │
 ├── layouts/
@@ -240,11 +240,23 @@ services/api.js
 services/products.service.js
   └── getIngredients()   → GET /api/products?type=INGREDIENT
   └── getMaterials()     → GET /api/products?type=MATERIAL
-  └── Normaliza campos antes de exponer datos a la UI.
+  └── getAllProducts()   → GET /api/products
+  └── getProductById()  → GET /api/products/:id
+  └── Normaliza campos antes de exponer datos a la UI
+      (API: code→sku, name→nombre, unitType→unidad, unitPrice→precio, etc.)
 
 services/orders.service.js
   └── getOrders(), createOrder(), updateOrderStatus()
 ```
+
+#### Pantalla de Bajas y Devoluciones (`features/returns/ReturnsPage.jsx`)
+
+- Llama a `GET /api/inventory?limit=20&page=1` para cargar el historial de movimientos.
+- La respuesta es paginada (`{ data: [], meta: {} }`); el componente consume `res.data`.
+- El nombre del producto en el historial se obtiene de `m.producto?.name` (objeto relacionado cargado por el backend). Si no está disponible, muestra `m.productoId` como fallback.
+- Los tipos de movimiento se traducen en la UI: `ENTRY` → "Entrada", `EXIT` → "Salida", `ADJUSTMENT` → "Ajuste", cualquier otro → "Pérdida".
+- Merma/Baja → `POST /api/inventory/salida` (tipo `EXIT`).
+- Devolución → `POST /api/inventory/entrada` (tipo `ENTRY`).
 
 ---
 

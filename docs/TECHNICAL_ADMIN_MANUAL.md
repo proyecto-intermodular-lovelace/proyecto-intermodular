@@ -109,6 +109,10 @@ Los scripts de base de datos se encuentran en `scripts/db/` y se ejecutan **dent
 | `004_fix_suppliers_inventory.sql` | Correcciones sobre inventario de proveedores |
 | `005_make_supplier_nullable.sql` | Permite proveedor nulo en productos |
 | `006_seed_suppliers.sql` | Datos de prueba de proveedores |
+| `007_create_import_jobs.sql` | Tabla `import_jobs` para el worker de importación CSV |
+| `008_recipes.sql` | Tablas de recetas, ingredientes de recetas y alérgenos |
+| `009_fix_supplier_encoding.sql` | Correcciones de codificación UTF-8 en nombres de proveedores |
+| `010_inventory_movements.sql` | Enum `inventory_movement_type` y tabla `inventory_movements` |
 
 ### Inicialización automática
 
